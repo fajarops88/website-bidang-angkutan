@@ -7,11 +7,11 @@
 
   const PUBLIK = {
     '': 'beranda', profil: 'profil', berita: 'berita', pengumuman: 'pengumuman', regulasi: 'regulasi',
-    pengaduan: 'pengaduan', 'cek-status': 'cekStatus', survei: 'survei', statistik: 'statistik', login: 'login'
+    pengaduan: 'pengaduan', 'cek-status': 'cekStatus', survei: 'survei', statistik: 'statistik', simau: 'simau', login: 'login'
   };
   const JUDUL = {
     beranda: '', profil: 'Profil Bidang', berita: 'Berita', pengumuman: 'Pengumuman', regulasi: 'Regulasi',
-    pengaduan: 'Pengaduan', cekStatus: 'Cek Status Tiket', survei: 'Survei Layanan', statistik: 'Statistik', login: 'Login Admin'
+    pengaduan: 'Pengaduan', cekStatus: 'Cek Status Tiket', survei: 'Survei Layanan', statistik: 'Statistik', simau: 'SIMAU – Data Angkutan', login: 'Login Admin'
   };
   const AKTIF = { cekStatus: 'cek-status', beranda: 'beranda' };
 
@@ -64,6 +64,14 @@
     });
     document.addEventListener('click', function () {
       UI.$$('.dd.open').forEach(function (d) { d.classList.remove('open'); d.querySelector('.dd-btn').setAttribute('aria-expanded', 'false'); });
+    });
+
+    // Tautan ke SIMAU: tampil hanya bila alamatnya diisi di js/config.js
+    const simau = String(cfg.SIMAU_URL || '').trim();
+    const adaSimau = /^https:\/\/script\.google\.com\//.test(simau);
+    UI.$$('[data-simau]').forEach(function (el) {
+      if (!adaSimau) { el.hidden = true; return; }
+      if (el.getAttribute('data-simau') === 'login') el.setAttribute('href', simau);
     });
 
     // Identitas dari konfigurasi

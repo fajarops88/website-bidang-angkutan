@@ -53,6 +53,9 @@ Bila Spreadsheet sudah terlanjur dibuat sebelum pembaruan ini, ketik `Atasan_ID`
 - Di sisi pengunjung, situs menyimpan salinan data publik di browser: kunjungan berikutnya tampil langsung, lalu diperbarui diam-diam.
 - Setelah mengganti `Kode.gs`, terapkan **Versi baru** pada Deployment.
 
+## C4. Menu SIMAU
+Di `js/config.js`, isian `SIMAU_URL` berisi alamat `/exec` aplikasi SIMAU. Website menautkan halaman publik SIMAU (`?page=dashboard-publik`, `?page=cek-status`, `?page=lapor`) di tab baru, dan tautan kecil "Login Petugas SIMAU" di footer dan menu HP. Kosongkan `SIMAU_URL` untuk menyembunyikan semua tautan itu. SIMAU sendiri tidak diubah.
+
 ## D. Hal yang perlu diketahui
 - **Kecepatan:** Google Apps Script kadang lambat 2–5 detik pada akses pertama ("cold start"). Data publik di-cache 5 menit.
 - **Kuota:** akun Gmail gratis dibatasi (± 20.000 pemanggilan URL/hari). Cukup untuk target kunjungan yang direncanakan.

@@ -104,10 +104,12 @@
                     : '<p class="foot-teks">Informasi kontak belum diisi.</p>') + '</div>' +
       '<div><strong class="foot-judul">Layanan</strong><ul class="foot-link">' +
       '<li><a href="#/pengaduan">Formulir Pengaduan</a></li><li><a href="#/cek-status">Cek Status Tiket</a></li>' +
-      '<li><a href="#/regulasi">Regulasi</a></li><li><a href="#/statistik">Statistik Layanan</a></li></ul></div>' +
+      '<li><a href="#/regulasi">Regulasi</a></li><li><a href="#/statistik">Statistik Layanan</a></li>' +
+      (simauUrl('dashboard-publik') ? '<li><a href="#/simau">SIMAU – Data Angkutan</a></li>' : '') + '</ul></div>' +
       '</div><div class="footer-bawah"><div class="container footer-bawah-in"><span>© ' + new Date().getFullYear() +
       ' Pemerintah Kota Balikpapan • Dinas Perhubungan • ' + esc(cfg.NAMA_BIDANG) + '</span>' +
-      '<a href="#/login">' + icon('shield_person') + ' Login Admin</a></div></div>';
+      '<span class="foot-login">' + (simauUrl() ? '<a href="' + esc(simauUrl()) + '" target="_blank" rel="noopener noreferrer">' + icon('badge') + ' Login Petugas SIMAU</a>' : '') +
+      '<a href="#/login">' + icon('shield_person') + ' Login Admin</a></span></div></div>';
   }
 
   // ---------- Komponen bersama ----------
@@ -180,11 +182,12 @@
         (sambutan ? '<p>' + esc(sambutan.length > 200 ? sambutan.substr(0, 200).replace(/\s+\S*$/, '') + '…' : sambutan) + '</p>' : '') + '</div></div>' : '') +
       '</div></section>' +
 
-      '<section class="section"><div class="container"><div class="grid grid-4">' +
+      '<section class="section"><div class="container"><div class="grid grid-svc">' +
       layananKartu('#/pengaduan', 'edit_note', 'Form Pengaduan', 'Laporkan masalah angkutan tanpa login. Anda akan mendapat Kode Tiket.', 'Buat laporan') +
       layananKartu('#/cek-status', 'manage_search', 'Cek Status Tiket', 'Pantau perkembangan pengaduan dengan memasukkan Kode Tiket.', 'Lacak progres') +
       layananKartu('#/regulasi', 'gavel', 'Regulasi', 'Cari dan unduh peraturan serta keputusan terkait angkutan.', 'Lihat dokumen') +
       layananKartu('#/survei', 'rate_review', 'Survei Layanan', 'Beri penilaian layanan Bidang Angkutan untuk perbaikan mutu.', 'Isi survei') +
+      (simauUrl('dashboard-publik') ? layananKartu('#/simau', 'directions_bus', 'SIMAU – Data Angkutan', 'Dashboard publik, cek status kendaraan, dan lapor kendaraan angkutan.', 'Buka layanan SIMAU') : '') +
       '</div></div></section>' +
 
       '<section class="band"><div class="container"><h2 class="band-judul">' + icon('query_stats') + ' Transparansi Layanan</h2><div class="grid grid-4">' +
@@ -212,9 +215,18 @@
     });
   };
 
+  // Alamat halaman SIMAU (aplikasi terpisah). Halaman bawaan SIMAU adalah login, jadi halaman publik dipilih lewat ?page=
+  function simauUrl(halaman) {
+    const b = String(cfg.SIMAU_URL || '').trim();
+    if (!/^https:\/\/script\.google\.com\//.test(b)) return '';
+    return halaman ? b + (b.indexOf('?') >= 0 ? '&' : '?') + 'page=' + halaman : b;
+  }
+  P.simauUrl = simauUrl;
+
   function layananKartu(href, ikon, judul, teks, aksi) {
-    return '<a class="card svc" href="' + href + '"><span class="svc-ikon">' + icon(ikon) + '</span><h3>' + esc(judul) + '</h3><p>' + esc(teks) +
-      '</p><span class="link-baca">' + esc(aksi) + icon('arrow_forward', 'sm') + '</span></a>';
+    const luar = /^https:/.test(href);
+    return '<a class="card svc" href="' + href + '"' + (luar ? ' target="_blank" rel="noopener noreferrer"' : '') + '><span class="svc-ikon">' + icon(ikon) + '</span><h3>' + esc(judul) + '</h3><p>' + esc(teks) +
+      '</p><span class="link-baca">' + esc(aksi) + icon(luar ? 'open_in_new' : 'arrow_forward', 'sm') + '</span></a>';
   }
 
   // ============================================================
@@ -765,6 +777,24 @@
     return '<div class="hbar"><div class="hbar-atas"><span>' + esc(label) + '</span><strong class="mono">' + esc(teks) + '</strong></div>' +
       '<div class="hbar-trek" role="presentation"><div class="hbar-isi ' + (kelas || '') + '" style="width:' + persen.toFixed(1) + '%"></div></div></div>';
   }
+
+  // ============================================================
+  // SIMAU (tautan ke halaman publik aplikasi SIMAU)
+  // ============================================================
+  P.simau = function () {
+    const kartu = [
+      ['dashboard-publik', 'monitoring', 'Dashboard Publik', 'Ringkasan jumlah kendaraan angkutan aktif, trayek, perusahaan, dan kondisi halte.', 'Buka dashboard'],
+      ['cek-status', 'fact_check', 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Cek kendaraan'],
+      ['lapor', 'report', 'Lapor Kendaraan Angkutan', 'Laporkan temuan atau keluhan tentang kendaraan angkutan tertentu.', 'Buat laporan']
+    ];
+    const ada = !!simauUrl();
+    tampil(kepala([{ t: 'SIMAU' }], 'SIMAU – Data Angkutan',
+      'Sistem Informasi Manajemen Angkutan Umum. Halaman berikut dikelola dalam aplikasi SIMAU dan terbuka di tab baru.', cfg.NAMA_BIDANG) +
+      '<div class="container section">' + (ada
+        ? '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
+          '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Catatan:</strong> Pengaduan di SIMAU berfokus pada kendaraan tertentu. Untuk keluhan layanan angkutan secara umum (halte, rambu, trayek), gunakan <a href="#/pengaduan">Formulir Pengaduan</a> di situs ini.</p></div></div>'
+        : UI.kosong('Tautan SIMAU belum diatur.', 'link_off')) + '</div>');
+  };
 
   P.statistik = async function () {
     tampil(kepala([{ t: 'Statistik' }], 'Statistik Layanan') + '<div class="container section">' + UI.rangka(4) + '</div>');
