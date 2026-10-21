@@ -80,7 +80,7 @@
 
   // ---------- Render ----------
   let hitung = 0;
-  async function render() {
+  async function render(diam) {
     const id = ++hitung;
     Publik.rid = id;
     Admin.rid = id;
@@ -117,18 +117,28 @@
     }
 
     if (id !== hitung) return;
+    if (diam === true) return;
     window.scrollTo(0, 0);
     const kepala = document.getElementById('judul-halaman');
     const sasaran = kepala || (admin ? document.getElementById('adm-isi') : document.getElementById('main'));
     if (sasaran) { sasaran.setAttribute('tabindex', '-1'); sasaran.focus({ preventScroll: true }); }
   }
 
-  window.addEventListener('hashchange', render);
-  window.addEventListener('ulang-rute', render);
+  window.addEventListener('hashchange', function () { render(); });
+  window.addEventListener('ulang-rute', function () { render(); });
+  // Data baru tiba setelah halaman sudah tampil dari salinan lokal: gambar ulang halaman baca-saja secara diam-diam
+  window.addEventListener('data-publik-baru', function () {
+    const a = parse().parts[0] || '';
+    if (['', 'profil', 'berita', 'pengumuman', 'regulasi', 'statistik'].indexOf(a) < 0) return;
+    if (document.getElementById('modal-root').children.length) return;
+    render(true);
+  });
   window.addEventListener('sesi-habis', function () {
     UI.toast('Sesi berakhir. Silakan masuk kembali.', 'err');
     location.hash = '#/login';
   });
+
+  Api.panaskan();
 
   document.addEventListener('DOMContentLoaded', function () {
     pasangKerangka();

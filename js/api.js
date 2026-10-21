@@ -106,17 +106,59 @@
     }
   };
 
-  // ---------- Data publik (disimpan sebentar di memori agar pindah halaman terasa cepat) ----------
+  // ---------- Data publik: tampil instan dari salinan lokal, lalu diperbarui di latar belakang ----------
+  const KUNCI = 'pub_v1';
+  const KADALUARSA = 24 * 3600 * 1000;   // salinan lokal dipakai maksimal 24 jam
+  const SEGAR = 60 * 1000;               // dalam 1 menit tidak perlu tanya server lagi
   let memo = null;
   let memoWaktu = 0;
+  let sedangMuat = null;
+
+  function bacaLokal() {
+    try {
+      const o = JSON.parse(localStorage.getItem(KUNCI) || 'null');
+      if (o && o.data && Date.now() - o.waktu < KADALUARSA) return o;
+    } catch (e) { /* abaikan */ }
+    return null;
+  }
+  function tulisLokal(data) {
+    try { localStorage.setItem(KUNCI, JSON.stringify({ waktu: Date.now(), data: data })); } catch (e) { /* penyimpanan penuh/diblokir */ }
+  }
+
+  function ambilBaru() {
+    if (sedangMuat) return sedangMuat;
+    sedangMuat = Api.get('publik').then(function (data) {
+      const beda = !memo || JSON.stringify(data) !== JSON.stringify(memo);
+      memo = data; memoWaktu = Date.now(); tulisLokal(data);
+      return { data: data, beda: beda };
+    }).finally(function () { sedangMuat = null; });
+    return sedangMuat;
+  }
+
   Api.publik = async function (paksa) {
     const now = Date.now();
-    if (!paksa && memo && now - memoWaktu < 60000) return memo;
-    memo = await Api.get('publik');
-    memoWaktu = now;
-    return memo;
+    if (!paksa && memo && now - memoWaktu < SEGAR) return memo;
+    if (!paksa) {
+      const lokal = bacaLokal();
+      if (lokal) {
+        // Tampilkan salinan lama SEKARANG, perbarui diam-diam; beri tahu halaman bila isinya berubah.
+        if (!memo) { memo = lokal.data; memoWaktu = lokal.waktu; }
+        ambilBaru().then(function (r) {
+          if (r.beda) window.dispatchEvent(new CustomEvent('data-publik-baru'));
+        }).catch(function () { /* tetap pakai salinan lama */ });
+        return memo;
+      }
+    }
+    const r = await ambilBaru();
+    return r.data;
   };
-  Api.lupakanCache = function () { memo = null; };
+  Api.lupakanCache = function () {
+    memo = null; memoWaktu = 0;
+    try { localStorage.removeItem(KUNCI); } catch (e) { /* abaikan */ }
+  };
+
+  // Mulai mengunduh data sedini mungkin (sebelum halaman selesai digambar)
+  Api.panaskan = function () { if (Api.siap()) Api.publik().catch(function () { /* ditangani halaman */ }); };
 
   window.Api = Api;
 })();

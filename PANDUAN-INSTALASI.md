@@ -48,6 +48,11 @@ Halaman *Profil Bidang → Struktur Organisasi* menyusun bagan dari menu **Pejab
 
 Bila Spreadsheet sudah terlanjur dibuat sebelum pembaruan ini, ketik `Atasan_ID` di sel **I1** sheet `Pejabat_Pegawai` (hanya label; kode membaca kolom menurut posisi). Setelah itu terapkan **Versi baru** pada Deployment Apps Script.
 
+## C3. Mempercepat (opsional tapi disarankan)
+- Di editor Apps Script, pilih fungsi **`pasangPemanasCache`** → Jalankan (setujui izin baru "pemicu"). Fungsi ini menyiapkan data publik tiap 10 menit, sehingga pengunjung pertama tidak menunggu pembacaan Spreadsheet. Untuk mematikan: `copotPemanasCache`.
+- Di sisi pengunjung, situs menyimpan salinan data publik di browser: kunjungan berikutnya tampil langsung, lalu diperbarui diam-diam.
+- Setelah mengganti `Kode.gs`, terapkan **Versi baru** pada Deployment.
+
 ## D. Hal yang perlu diketahui
 - **Kecepatan:** Google Apps Script kadang lambat 2–5 detik pada akses pertama ("cold start"). Data publik di-cache 5 menit.
 - **Kuota:** akun Gmail gratis dibatasi (± 20.000 pemanggilan URL/hari). Cukup untuk target kunjungan yang direncanakan.
