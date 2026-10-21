@@ -266,6 +266,31 @@ body.no-scroll { overflow: hidden; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
 .pager-info { color: var(--muted); font-size: .9rem; }
 
+
+/* ---------- Bagan struktur organisasi ---------- */
+.org-bungkus { overflow-x: auto; padding: 16px 8px; background: #fff; border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 12px; }
+.org { display: flex; }
+.org ul { display: flex; justify-content: center; list-style: none; margin: 0; padding: 20px 0 0; position: relative; }
+.org > ul { margin: 0 auto; padding-top: 0; }
+.org li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 20px 6px 0; }
+.org > ul > li { padding-top: 0; }
+.org ul ul::before { content: ''; position: absolute; top: 0; left: 50%; height: 20px; border-left: 2px solid #b7b9c8; }
+.org li::before, .org li::after { content: ''; position: absolute; top: 0; right: 50%; width: 50%; height: 20px; border-top: 2px solid #b7b9c8; }
+.org li::after { right: auto; left: 50%; border-left: 2px solid #b7b9c8; }
+.org > ul > li::before, .org > ul > li::after { display: none; }
+.org li:only-child::before, .org li:only-child::after { display: none; }
+.org li:only-child { padding-top: 20px; }
+.org > ul > li:only-child { padding-top: 0; }
+.org li:first-child::before, .org li:last-child::after { border: 0 none; }
+.org li:last-child::before { border-right: 2px solid #b7b9c8; border-radius: 0 6px 0 0; }
+.org li:first-child::after { border-radius: 6px 0 0 0; }
+.org-node { width: 168px; padding: 10px 8px; text-align: center; background: #fff; border: 1.5px solid var(--line); border-top: 4px solid var(--primary); border-radius: var(--r); box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.org-node strong { font-size: .85rem; line-height: 1.25; color: var(--navy); }
+.org-node span { font-size: .75rem; color: var(--primary); font-weight: 600; line-height: 1.25; }
+.org-node em { font-style: normal; font-size: .7rem; color: var(--muted); }
+.org-atas { border-top-color: var(--amber); width: 200px; }
+.avatar-sm { width: 52px; height: 52px; font-size: 1.1rem; margin-bottom: 4px; }
+
 /* ---------- Pengaduan / tiket ---------- */
 .kode-besar { text-align: center; background: var(--primary-soft); border: 2px dashed var(--primary); border-radius: var(--r); padding: 20px; }
 .kode-besar strong { display: block; font-size: clamp(1.4rem, 5vw, 2rem); letter-spacing: .08em; color: var(--primary-dark); }

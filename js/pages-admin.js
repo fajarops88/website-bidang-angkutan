@@ -298,6 +298,7 @@
         { k: 'NIP', l: 'NIP', t: 'text', max: 40, hint: 'Opsional. Bila diisi, NIP tampil di halaman publik.' },
         { k: 'Urutan', l: 'Urutan tampil', t: 'text', max: 3, hint: 'Angka kecil tampil lebih dulu. Urutan 1 tampil di Beranda sebagai pimpinan.' },
         { k: 'URL_Foto', l: 'Foto', t: 'unggah', folder: 'pejabat', jenis: 'gambar' },
+        { k: 'Atasan_ID', l: 'Atasan langsung', t: 'pilih', hint: 'Dipakai untuk menyusun Bagan Struktur Organisasi otomatis. Kosongkan untuk pimpinan tertinggi (mis. Kepala Bidang). Staf dipilihkan Kepala Seksinya.' },
         { k: 'Status_Aktif', l: 'Tampilkan di situs', t: 'select', opsi: ['Ya', 'Tidak'] }
       ]
     }
@@ -313,6 +314,8 @@
     const lab = '<label class="label" for="' + id + '">' + esc(f.l) + (f.wajib ? ' <span class="wajib">*</span>' : '') + '</label>';
     v = v || '';
     if (f.t === 'textarea') return '<div class="field">' + lab + '<textarea id="' + id + '" class="textarea" rows="' + (f.baris || 4) + '" maxlength="' + (f.max || 500) + '">' + esc(v) + '</textarea>' + hint + '</div>';
+    if (f.t === 'pilih') return '<div class="field">' + lab + '<select id="' + id + '" class="select"><option value="">— Tidak ada (pimpinan tertinggi) —</option>' +
+      (f.pilihan || []).map(function (o) { return '<option value="' + esc(o.v) + '"' + (o.v === v ? ' selected' : '') + '>' + esc(o.l) + '</option>'; }).join('') + '</select>' + hint + '</div>';
     if (f.t === 'select') return '<div class="field">' + lab + '<select id="' + id + '" class="select">' + sel(v, f.opsi) + '</select>' + hint + '</div>';
     if (f.t === 'date') return '<div class="field">' + lab + '<input id="' + id + '" class="input" type="date" value="' + esc(v) + '">' + hint + '</div>';
     if (f.t === 'rich') {
@@ -454,7 +457,10 @@
       const awal = data || T.baru();
       const md = UI.modal({
         judul: (baru ? 'Tambah ' : 'Ubah ') + T.satu, lebar: true, tetap: true,
-        isi: '<form id="c-form" class="stack" novalidate>' + T.field.map(function (f) { return inputField(f, awal[f.k]); }).join('') + '</form>',
+        isi: '<form id="c-form" class="stack" novalidate>' + T.field.map(function (f) {
+          if (f.t === 'pilih') f = Object.assign({}, f, { pilihan: rows.filter(function (r) { return r.ID !== awal.ID; }).map(function (r) { return { v: r.ID, l: r.Nama + ' — ' + r.Jabatan }; }) });
+          return inputField(f, awal[f.k]);
+        }).join('') + '</form>',
         kaki: '<button type="button" class="btn btn-ghost" data-tutup>Batal</button><button type="button" class="btn btn-primary" id="c-simpan">' + icon('save') + 'Simpan</button>'
       });
       aktifkanEditor(md.el);

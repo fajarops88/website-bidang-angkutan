@@ -43,6 +43,11 @@ Catatan:
 4. Isi **Pejabat dan Pegawai**, lalu tambah Berita/Pengumuman/Regulasi (status *Terbit* agar tampil publik). Satu berita contoh berstatus *Draft* sudah ada; hapus bila tidak perlu.
 5. Pengaduan masuk dikelola di menu **Pengaduan** (ubah status Diterima/Diproses/Selesai, tanggapan, rekap PDF).
 
+## C2. Bagan Struktur Organisasi otomatis
+Halaman *Profil Bidang → Struktur Organisasi* menyusun bagan dari menu **Pejabat dan Pegawai**. Di tiap data ada kolom **Atasan langsung**: kosongkan untuk pimpinan tertinggi (Kepala Bidang), pilih Kepala Bidang untuk Kepala Seksi, pilih Kepala Seksi untuk stafnya. Tanpa pengisian atasan, orang dengan Urutan terkecil menjadi pimpinan dan lainnya di bawahnya.
+
+Bila Spreadsheet sudah terlanjur dibuat sebelum pembaruan ini, ketik `Atasan_ID` di sel **I1** sheet `Pejabat_Pegawai` (hanya label; kode membaca kolom menurut posisi). Setelah itu terapkan **Versi baru** pada Deployment Apps Script.
+
 ## D. Hal yang perlu diketahui
 - **Kecepatan:** Google Apps Script kadang lambat 2–5 detik pada akses pertama ("cold start"). Data publik di-cache 5 menit.
 - **Kuota:** akun Gmail gratis dibatasi (± 20.000 pemanggilan URL/hari). Cukup untuk target kunjungan yang direncanakan.

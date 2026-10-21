@@ -230,6 +230,31 @@
     return baris.length > 1 ? UI.daftar(t, ordered) : UI.paragraf(t);
   }
 
+  // Bagan struktur: pohon dari kolom Atasan; bila belum ada atasan terisi, pejabat pertama menjadi pimpinan
+  function baganStruktur(daftar) {
+    if (!daftar || !daftar.length) return '';
+    const ada = {}; daftar.forEach(function (p) { ada[p.id] = p; });
+    const anak = {}; const akar = [];
+    const adaAtasan = daftar.some(function (p) { return p.atasan && ada[p.atasan] && p.atasan !== p.id; });
+    daftar.forEach(function (p, i) {
+      let a = adaAtasan ? p.atasan : (i === 0 ? '' : daftar[0].id);
+      if (!a || !ada[a] || a === p.id) { akar.push(p); return; }
+      (anak[a] = anak[a] || []).push(p);
+    });
+    const dipakai = {};
+    function simpul(p, kedalaman) {
+      dipakai[p.id] = true;
+      const ks = (anak[p.id] || []).filter(function (c) { return !dipakai[c.id]; });
+      return '<li><div class="org-node' + (kedalaman === 0 ? ' org-atas' : '') + '">' + avatar(p.foto, p.nama, 'avatar avatar-sm') +
+        '<strong>' + esc(p.nama) + '</strong><span>' + esc(p.jabatan) + '</span>' + (p.golongan ? '<em>' + esc(p.golongan) + '</em>' : '') + '</div>' +
+        (ks.length && kedalaman < 8 ? '<ul>' + ks.map(function (c) { return simpul(c, kedalaman + 1); }).join('') + '</ul>' : '') + '</li>';
+    }
+    let html = akar.map(function (p) { return simpul(p, 0); }).join('');
+    // pengaman bila ada rantai atasan yang berputar
+    daftar.forEach(function (p) { if (!dipakai[p.id]) html += simpul(p, 0); });
+    return '<div class="org"><ul>' + html + '</ul></div>';
+  }
+
   P.profil = async function (ctx) {
     const sub = ctx.parts[1] || 'sejarah';
     if (!SUB_PROFIL[sub]) return P.tidakAda();
@@ -251,8 +276,10 @@
       isi = pv('tugas_fungsi') ? '<div class="prosa">' + teksAtauDaftar(pv('tugas_fungsi')) + '</div>' : kosong;
     } else if (sub === 'struktur') {
       const g = pg('struktur_organisasi');
-      isi = g
-        ? '<figure class="figur"><a href="' + esc(g) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(g) + '" alt="Bagan struktur organisasi ' + esc(cfg.NAMA_BIDANG) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption class="muted small">Ketuk atau klik gambar untuk memperbesar.</figcaption></figure>'
+      const bagan = baganStruktur(d.pejabat);
+      isi = (bagan || g)
+        ? (bagan ? '<div class="org-bungkus" tabindex="0" role="region" aria-label="Bagan struktur organisasi, dapat digulir">' + bagan + '</div><p class="muted small">Bagan disusun otomatis dari data Pejabat dan Pegawai. Geser ke samping bila bagan melebihi layar.</p>' : '') +
+          (g ? '<figure class="figur"><a href="' + esc(g) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(g) + '" alt="Bagan struktur organisasi ' + esc(cfg.NAMA_BIDANG) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption class="muted small">Bagan resmi (gambar). Ketuk atau klik untuk memperbesar.</figcaption></figure>' : '')
         : kosong;
     } else {
       isi = '<div class="filter-bar"><div class="field grow"><label class="label" for="cari-pj">Cari nama atau jabatan</label>' +
