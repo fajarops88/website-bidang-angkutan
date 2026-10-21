@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bidang Angkutan – Dinas Perhubungan Kota Balikpapan</title>
+  <meta name="description" content="Portal resmi Bidang Angkutan Dinas Perhubungan Kota Balikpapan: informasi, regulasi, pengaduan masyarakat, cek status tiket, dan survei layanan.">
+  <meta name="theme-color" content="#0F3876">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Lewati ke konten utama</a>
+
+  <!-- ===================== TAMPILAN PUBLIK ===================== -->
+  <div id="shell-publik">
+    <div class="topbar">
+      <div class="container topbar-in">
+        <span><span class="material-symbols-outlined" aria-hidden="true">account_balance</span> Pemerintah Kota Balikpapan</span>
+        <span id="topbar-kontak" class="topbar-kontak"></span>
+      </div>
+    </div>
+
+    <header class="site-header">
+      <div class="container header-in">
+        <button type="button" class="icon-btn only-mobile" id="btn-menu" aria-label="Buka menu" aria-expanded="false" aria-controls="drawer">
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+        </button>
+        <a href="#/" class="brand" aria-label="Beranda Bidang Angkutan">
+          <span class="brand-logo" id="brand-logo"><span class="material-symbols-outlined" aria-hidden="true">directions_bus</span></span>
+          <span class="brand-text">
+            <strong id="brand-bidang">Bidang Angkutan</strong>
+            <small id="brand-instansi">Dinas Perhubungan Kota Balikpapan</small>
+          </span>
+        </a>
+        <div class="header-aksi hide-mobile">
+          <a class="btn btn-light btn-sm" href="#/cek-status"><span class="material-symbols-outlined" aria-hidden="true">search_check</span>Cek Tiket</a>
+          <a class="btn btn-amber btn-sm" href="#/pengaduan"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Buat Pengaduan</a>
+        </div>
+      </div>
+      <nav class="site-nav hide-mobile" aria-label="Navigasi utama">
+        <div class="container nav-in">
+          <a href="#/" data-rute="beranda">Beranda</a>
+          <div class="dd" data-rute="profil">
+            <button type="button" class="dd-btn" aria-expanded="false" aria-haspopup="true">Profil Bidang <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></button>
+            <div class="dd-menu">
+              <a href="#/profil/sejarah">Sejarah</a>
+              <a href="#/profil/visi-misi">Visi dan Misi</a>
+              <a href="#/profil/tugas-fungsi">Tugas dan Fungsi</a>
+              <a href="#/profil/struktur">Struktur Organisasi</a>
+              <a href="#/profil/pejabat">Pejabat dan Pegawai</a>
+            </div>
+          </div>
+          <a href="#/berita" data-rute="berita">Berita</a>
+          <a href="#/pengumuman" data-rute="pengumuman">Pengumuman</a>
+          <a href="#/regulasi" data-rute="regulasi">Regulasi</a>
+          <a href="#/pengaduan" data-rute="pengaduan">Pengaduan</a>
+          <a href="#/cek-status" data-rute="cek-status">Cek Status</a>
+          <a href="#/survei" data-rute="survei">Survei</a>
+          <a href="#/statistik" data-rute="statistik">Statistik</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1"></main>
+
+    <footer class="site-footer" id="footer"></footer>
+
+    <nav class="bottom-nav only-mobile" aria-label="Menu cepat">
+      <a href="#/" data-rute="beranda"><span class="material-symbols-outlined" aria-hidden="true">home</span>Beranda</a>
+      <a href="#/berita" data-rute="berita"><span class="material-symbols-outlined" aria-hidden="true">newspaper</span>Berita</a>
+      <a href="#/pengaduan" data-rute="pengaduan"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Aduan</a>
+      <a href="#/cek-status" data-rute="cek-status"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>Lacak</a>
+      <a href="#/survei" data-rute="survei"><span class="material-symbols-outlined" aria-hidden="true">rate_review</span>Survei</a>
+    </nav>
+
+    <!-- Menu samping untuk ponsel -->
+    <div id="drawer-back" class="drawer-back" hidden></div>
+    <aside id="drawer" class="drawer" aria-label="Menu lengkap" hidden>
+      <div class="drawer-head">
+        <strong>Menu</strong>
+        <button type="button" class="icon-btn" id="btn-menu-tutup" aria-label="Tutup menu"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+      <a href="#/" data-rute="beranda">Beranda</a>
+      <div class="drawer-grup">Profil Bidang</div>
+      <a href="#/profil/sejarah" class="sub">Sejarah</a>
+      <a href="#/profil/visi-misi" class="sub">Visi dan Misi</a>
+      <a href="#/profil/tugas-fungsi" class="sub">Tugas dan Fungsi</a>
+      <a href="#/profil/struktur" class="sub">Struktur Organisasi</a>
+      <a href="#/profil/pejabat" class="sub">Pejabat dan Pegawai</a>
+      <a href="#/berita" data-rute="berita">Berita</a>
+      <a href="#/pengumuman" data-rute="pengumuman">Pengumuman</a>
+      <a href="#/regulasi" data-rute="regulasi">Regulasi</a>
+      <a href="#/pengaduan" data-rute="pengaduan">Pengaduan</a>
+      <a href="#/cek-status" data-rute="cek-status">Cek Status Tiket</a>
+      <a href="#/survei" data-rute="survei">Survei Layanan</a>
+      <a href="#/statistik" data-rute="statistik">Statistik</a>
+      <a href="#/login" class="drawer-admin">Login Admin</a>
+    </aside>
+  </div>
+
+  <!-- ===================== PANEL ADMIN ===================== -->
+  <div id="shell-admin" hidden></div>
+
+  <div id="modal-root"></div>
+  <div id="toasts" aria-live="polite"></div>
+
+  <noscript><p style="padding:24px;font-family:sans-serif">Situs ini memerlukan JavaScript. Silakan aktifkan JavaScript di peramban Anda.</p></noscript>
+
+  <script src="js/config.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages-publik.js"></script>
+  <script src="js/pages-admin.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
