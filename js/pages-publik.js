@@ -187,8 +187,10 @@
       layananKartu('#/cek-status', 'manage_search', 'Cek Status Tiket', 'Pantau perkembangan pengaduan dengan memasukkan Kode Tiket.', 'Lacak progres') +
       layananKartu('#/regulasi', 'gavel', 'Regulasi', 'Cari dan unduh peraturan serta keputusan terkait angkutan.', 'Lihat dokumen') +
       layananKartu('#/survei', 'rate_review', 'Survei Layanan', 'Beri penilaian layanan Bidang Angkutan untuk perbaikan mutu.', 'Isi survei') +
-      layananKartu('#/simau', 'directions_bus', 'SIMAU – Data Angkutan', 'Dashboard publik, cek status kendaraan, dan lapor kendaraan angkutan.', 'Buka layanan SIMAU') +
       '</div></div></section>' +
+
+      '<section class="section section-alt"><div class="container"><div class="judul-baris"><h2>SIMAU – Data Angkutan</h2><a class="link-baca" href="#/simau">Tentang SIMAU' + icon('chevron_right', 'sm') + '</a></div>' +
+      '<div class="grid grid-3">' + SIMAU_KARTU.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div></div></section>' +
 
       '<section class="band"><div class="container"><h2 class="band-judul">' + icon('query_stats') + ' Transparansi Layanan</h2><div class="grid grid-4">' +
       kpi('inbox', UI.fmtAngka(st.pengaduan.total), 'Pengaduan masuk') +
@@ -214,6 +216,13 @@
       location.hash = k ? '#/cek-status/' + encodeURIComponent(k) : '#/cek-status';
     });
   };
+
+  // Kartu layanan SIMAU (dipakai di Beranda dan halaman SIMAU)
+  const SIMAU_KARTU = [
+      ['dashboard-publik', 'monitoring', 'Dashboard Publik', 'Ringkasan jumlah kendaraan angkutan aktif, trayek, perusahaan, dan kondisi halte.', 'Buka dashboard'],
+      ['cek-status', 'fact_check', 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Cek kendaraan'],
+      ['lapor', 'report', 'Lapor Kendaraan Angkutan', 'Laporkan temuan atau keluhan tentang kendaraan angkutan tertentu.', 'Buat laporan']
+    ];
 
   // Alamat halaman SIMAU: berada di folder simau/ pada situs yang sama (halaman bawaannya login)
   function simauUrl(halaman) {
@@ -786,11 +795,7 @@
   // SIMAU (tautan ke halaman publik aplikasi SIMAU)
   // ============================================================
   P.simau = function () {
-    const kartu = [
-      ['dashboard-publik', 'monitoring', 'Dashboard Publik', 'Ringkasan jumlah kendaraan angkutan aktif, trayek, perusahaan, dan kondisi halte.', 'Buka dashboard'],
-      ['cek-status', 'fact_check', 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Cek kendaraan'],
-      ['lapor', 'report', 'Lapor Kendaraan Angkutan', 'Laporkan temuan atau keluhan tentang kendaraan angkutan tertentu.', 'Buat laporan']
-    ];
+    const kartu = SIMAU_KARTU;
     tampil(kepala([{ t: 'SIMAU' }], 'SIMAU – Data Angkutan',
       'Sistem Informasi Manajemen Angkutan Umum, bagian dari situs Bidang Angkutan.', cfg.NAMA_BIDANG) +
       '<div class="container section">' +
