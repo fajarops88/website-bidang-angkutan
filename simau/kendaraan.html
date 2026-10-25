@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+</head>
+<body>
+  <div id="sidebarMount"></div>
+  <div class="simantas-content">
+    <div id="topbarMount"></div>
+    <div class="page-body">
+      <div class="card card-modern p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h6 class="fw-semibold mb-0">Data Kendaraan</h6>
+          <div class="d-flex gap-2" id="toolbarPetugas">
+            <button class="btn btn-outline-success btn-sm" id="btnExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+            <button class="btn btn-primary btn-sm" id="btnTambah"><i class="fa-solid fa-plus"></i> Tambah Kendaraan</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="tblData" style="width:100%">
+            <thead><tr>
+              <th>No. Polisi</th><th>Trayek</th><th>Perusahaan</th><th>Pemilik</th>
+              <th>Masa Berlaku</th><th>Usia</th><th>Status</th><th class="no-print">Aksi</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="formModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title" id="formModalTitle">Tambah Kendaraan</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="fRow"><input type="hidden" id="fId">
+        <div class="row g-2">
+          <div class="col-md-6"><label class="form-label">Nomor Polisi</label><input class="form-control" id="fNopol" placeholder="KT 1234 AB"></div>
+          <div class="col-md-6"><label class="form-label">Trayek</label><select class="form-select" id="fTrayek"></select></div>
+          <div class="col-md-6"><label class="form-label">Perusahaan</label><select class="form-select" id="fPerusahaan"></select></div>
+          <div class="col-md-6"><label class="form-label">Masa Berlaku</label><input type="date" class="form-control" id="fMasaBerlaku"></div>
+          <div class="col-md-6"><label class="form-label">Tahun Pembuatan <small class="text-muted">(untuk cek peremajaan, Pasal 135)</small></label><input type="number" class="form-control" id="fTahunPembuatan" placeholder="Contoh: 2015" min="1980" max="2099"></div>
+          <div class="col-md-6"><label class="form-label">Nama Pemilik</label><input class="form-control" id="fNamaPemilik" placeholder="Nama pemilik kendaraan"></div>
+          <div class="col-md-6"><label class="form-label">Alamat Pemilik</label><input class="form-control" id="fAlamatPemilik"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary" id="btnSimpan">Simpan</button>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-sm"><div class="modal-content text-center">
+      <div class="modal-header"><h6 class="modal-title">QR Code Kendaraan</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <img id="qrImg" src="" style="width:220px;height:220px;">
+        <p class="text-muted mt-2 mb-0" style="font-size:12px;">Pindai untuk verifikasi kendaraan di lapangan</p>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="modal fade" id="cekModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Cek Perlengkapan &mdash; <span id="cekNopolLabel"></span></h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="alert alert-light border small mb-3">
+          <i class="fa-solid fa-circle-info text-primary"></i> Item sesuai <strong>Pasal 134 ayat (1) Perda No. 7 Tahun 2022</strong>. Minimal 50% (Ada &amp; Baik) untuk bisa terbitkan Kartu Pengawasan.
+        </div>
+        <div class="row g-2 border-bottom pb-1 mb-1" style="font-size:12px; color:#888;">
+          <div class="col-md-6">Item Perlengkapan</div><div class="col-md-3">Keterangan</div><div class="col-md-3">Kondisi</div>
+        </div>
+        <div id="cekFormArea"><div class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div></div></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary" id="btnSimpanCek">Simpan Hasil Cek</button>
+      </div>
+    </div></div>
+  </div>
+
+  <script>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    if (!requireLogin()) {}
+    setupSidebar('kendaraan');
+    initTopbar('Data Kendaraan');
+
+    const isPemilik = SIMANTAS.session && SIMANTAS.session.role === 'PEMILIK KENDARAAN';
+    if (isPemilik) document.getElementById('toolbarPetugas').style.display = 'none';
+
+    let dt, formModal, qrModal, cekModal, dataCache = [], trayekList = [], perusahaanList = [], perlengkapanList = [], cekKendaraanAktif = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      $.fn.dataTable.ext.errMode = 'none';
+      formModal = new bootstrap.Modal(document.getElementById('formModal'));
+      qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+      cekModal = new bootstrap.Modal(document.getElementById('cekModal'));
+      dt = $('#tblData').DataTable({ language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/id.json' } });
+      Promise.all([callServer('api_getMasterData'), callServer('api_getPerlengkapanList')]).then(function (res) {
+        trayekList = res[0].trayek; perusahaanList = res[0].perusahaan;
+        perlengkapanList = res[1];
+        isiDropdown('fTrayek', trayekList, 'ID_TRAYEK', 'NAMA_TRAYEK');
+        isiDropdown('fPerusahaan', perusahaanList, 'ID_PERUSAHAAN', 'NAMA_PERUSAHAAN');
+        muatData();
+      });
+    });
+
+    function isiDropdown(elId, list, idField, labelField) {
+      const el = document.getElementById(elId);
+      el.innerHTML = '<option value="">- Pilih -</option>' + list.map(function (x) {
+        return '<option value="' + x[idField] + '">' + x[labelField] + '</option>';
+      }).join('');
+    }
+
+    function namaDari(list, idField, id, labelField) {
+      const found = list.filter(function (x) { return String(x[idField]) === String(id); })[0];
+      return found ? found[labelField] : '-';
+    }
+
+    function muatData() {
+      callServer('api_listKendaraan').then(function (rows) {
+        dataCache = rows;
+        dt.clear();
+        rows.forEach(function (r) {
+          const statusBadge = r.STATUS_AKTIF === 'AKTIF'
+            ? '<span class="badge badge-aktif">AKTIF</span>' : '<span class="badge badge-tidak">TIDAK AKTIF</span>';
+          const usiaBadge = r.USIA_KENDARAAN === null || r.USIA_KENDARAAN === undefined
+            ? '<span class="text-muted">-</span>'
+            : (r.WAJIB_PEREMAJAAN
+                ? '<span class="badge badge-tidak" title="Usia > 15 tahun, wajib diremajakan (Pasal 135)">' + r.USIA_KENDARAAN + ' th &#9888;</span>'
+                : '<span class="badge bg-secondary">' + r.USIA_KENDARAAN + ' th</span>');
+          const aksi = isPemilik ? '' :
+            '<div class="btn-group">' +
+            '<button class="btn btn-sm btn-outline-primary btnEdit" data-row="' + r._row + '" title="Edit"><i class="fa-solid fa-pen"></i></button> ' +
+            '<button class="btn btn-sm btn-outline-danger btnHapus" data-row="' + r._row + '" title="Hapus"><i class="fa-solid fa-trash"></i></button> ' +
+            '<button class="btn btn-sm btn-outline-info btnQr" data-id="' + r.ID_KENDARAAN + '" title="QR Code"><i class="fa-solid fa-qrcode"></i></button> ' +
+            '<button class="btn btn-sm btn-outline-warning btnCek" data-id="' + r.ID_KENDARAAN + '" data-nopol="' + r.NOMOR_POLISI + '" title="Cek Kelengkapan"><i class="fa-solid fa-clipboard-check"></i> Cek Kelengkapan</button> ' +
+            '<button class="btn btn-sm btn-outline-dark btnKartu" data-id="' + r.ID_KENDARAAN + '" title="Cetak Kartu Pengawasan"><i class="fa-solid fa-id-card"></i> Kartu</button> ' +
+            '<button class="btn btn-sm btn-outline-secondary btnRiwayat" data-id="' + r.ID_KENDARAAN + '" title="Riwayat Kendaraan"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</button>' +
+            '</div>';
+          dt.row.add([
+            r.NOMOR_POLISI,
+            namaDari(trayekList, 'ID_TRAYEK', r.ID_TRAYEK, 'NAMA_TRAYEK'),
+            namaDari(perusahaanList, 'ID_PERUSAHAAN', r.ID_PERUSAHAAN, 'NAMA_PERUSAHAAN'),
+            r.NAMA_PEMILIK || '-',
+            r.MASA_BERLAKU ? new Date(r.MASA_BERLAKU).toLocaleDateString('id-ID') : '-',
+            usiaBadge,
+            statusBadge, aksi
+          ]);
+        });
+        dt.draw();
+        bindRowActions();
+      });
+    }
+
+    function renderCekForm(item) {
+      return (perlengkapanList || []).map(function (f) {
+        const ket = item ? (item[f.key + '_KET'] || '') : '';
+        const kondisi = item ? (item[f.key + '_KONDISI'] || '') : '';
+        return '<div class="row g-2 align-items-center border-bottom py-2">' +
+          '<div class="col-md-6" style="font-size:13px;">' + f.label + '</div>' +
+          '<div class="col-md-3">' +
+            '<select class="form-select form-select-sm cKet" data-key="' + f.key + '">' +
+              '<option value="">- Pilih -</option>' +
+              '<option value="Ada"' + (ket === 'Ada' ? ' selected' : '') + '>Ada</option>' +
+              '<option value="Tidak"' + (ket === 'Tidak' ? ' selected' : '') + '>Tidak</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="col-md-3">' +
+            '<select class="form-select form-select-sm cKondisi" data-key="' + f.key + '">' +
+              '<option value="">- Pilih -</option>' +
+              '<option value="Baik"' + (kondisi === 'Baik' ? ' selected' : '') + '>Baik</option>' +
+              '<option value="Buruk"' + (kondisi === 'Buruk' ? ' selected' : '') + '>Buruk</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function bindRowActions() {
+      $('#tblData').off('click', '.btnEdit').on('click', '.btnEdit', function () {
+        const row = Number($(this).data('row'));
+        const item = dataCache.filter(function (d) { return d._row === row; })[0];
+        document.getElementById('formModalTitle').textContent = 'Edit Kendaraan';
+        document.getElementById('fRow').value = item._row;
+        document.getElementById('fId').value = item.ID_KENDARAAN;
+        document.getElementById('fNopol').value = item.NOMOR_POLISI;
+        document.getElementById('fTrayek').value = item.ID_TRAYEK;
+        document.getElementById('fPerusahaan').value = item.ID_PERUSAHAAN;
+        document.getElementById('fNamaPemilik').value = item.NAMA_PEMILIK;
+        document.getElementById('fAlamatPemilik').value = item.ALAMAT_PEMILIK;
+        document.getElementById('fMasaBerlaku').value = item.MASA_BERLAKU ? new Date(item.MASA_BERLAKU).toISOString().slice(0,10) : '';
+        document.getElementById('fTahunPembuatan').value = item.TAHUN_PEMBUATAN || '';
+        formModal.show();
+      });
+      $('#tblData').off('click', '.btnHapus').on('click', '.btnHapus', function () {
+        const row = Number($(this).data('row'));
+        Swal.fire({ title: 'Hapus data kendaraan ini?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e63946', confirmButtonText: 'Hapus' })
+          .then(function (r) { if (r.isConfirmed) callServer('api_deleteKendaraan', row).then(function () { toastSukses('Data dihapus'); muatData(); }); });
+      });
+      $('#tblData').off('click', '.btnQr').on('click', '.btnQr', function () {
+        const id = $(this).data('id');
+        callServer('api_getQrUrl', id).then(function (url) {
+          document.getElementById('qrImg').src = url;
+          qrModal.show();
+        });
+      });
+      $('#tblData').off('click', '.btnKartu').on('click', '.btnKartu', function () {
+        gotoPage('kartu&id=' + $(this).data('id'));
+      });
+      $('#tblData').off('click', '.btnRiwayat').on('click', '.btnRiwayat', function () {
+        gotoPage('riwayat-kendaraan&id=' + $(this).data('id'));
+      });
+      $('#tblData').off('click', '.btnCek').on('click', '.btnCek', function () {
+        const id = $(this).data('id');
+        const nopol = $(this).data('nopol');
+        cekKendaraanAktif = { ID_KENDARAAN: id, NOMOR_POLISI: nopol };
+        document.getElementById('cekNopolLabel').textContent = nopol;
+        document.getElementById('cekFormArea').innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
+        callServer('api_listCekKendaraan').then(function (rows) {
+          rows = rows || [];
+          const milikKendaraanIni = rows.filter(function (r) { return String(r.ID_KENDARAAN) === String(id); });
+          milikKendaraanIni.sort(function (a, b) { return new Date(b.TANGGAL_CEK) - new Date(a.TANGGAL_CEK); });
+          const terbaru = milikKendaraanIni[0] || null;
+          document.getElementById('cekFormArea').innerHTML = renderCekForm(terbaru);
+          cekModal.show();
+        });
+      });
+    }
+
+    document.getElementById('btnTambah').addEventListener('click', function () {
+      document.getElementById('formModalTitle').textContent = 'Tambah Kendaraan';
+      ['fRow','fId','fNopol','fTrayek','fPerusahaan','fNamaPemilik','fAlamatPemilik','fMasaBerlaku','fTahunPembuatan'].forEach(function (id) { document.getElementById(id).value = ''; });
+      formModal.show();
+    });
+
+    document.getElementById('btnSimpan').addEventListener('click', function () {
+      const data = {
+        _row: document.getElementById('fRow').value || null,
+        ID_KENDARAAN: document.getElementById('fId').value,
+        NOMOR_POLISI: document.getElementById('fNopol').value.trim().toUpperCase(),
+        ID_TRAYEK: document.getElementById('fTrayek').value,
+        ID_PERUSAHAAN: document.getElementById('fPerusahaan').value,
+        NAMA_PEMILIK: document.getElementById('fNamaPemilik').value.trim(),
+        ALAMAT_PEMILIK: document.getElementById('fAlamatPemilik').value.trim(),
+        TAHUN_PEMBUATAN: document.getElementById('fTahunPembuatan').value || '',
+        MASA_BERLAKU: document.getElementById('fMasaBerlaku').value
+      };
+      if (!data.NOMOR_POLISI || !data.MASA_BERLAKU) {
+        Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Nomor Polisi dan Masa Berlaku wajib diisi.' }); return;
+      }
+      callServer('api_saveKendaraan', data).then(function () { formModal.hide(); toastSukses('Data tersimpan'); muatData(); });
+    });
+
+    document.getElementById('btnSimpanCek').addEventListener('click', function () {
+      if (!cekKendaraanAktif) return;
+      const data = {
+        ID_KENDARAAN: cekKendaraanAktif.ID_KENDARAAN,
+        NOMOR_POLISI: cekKendaraanAktif.NOMOR_POLISI
+      };
+      (perlengkapanList || []).forEach(function (f) {
+        data[f.key + '_KET'] = $('.cKet[data-key="' + f.key + '"]').val();
+        data[f.key + '_KONDISI'] = $('.cKondisi[data-key="' + f.key + '"]').val();
+      });
+      callServer('api_saveCekKendaraan', data).then(function () {
+        cekModal.hide();
+        toastSukses('Hasil cek kelengkapan tersimpan');
+      });
+    });
+
+    document.getElementById('btnExport').addEventListener('click', function () {
+      const rows = dataCache.map(function (r) {
+        return {
+          NOMOR_POLISI: r.NOMOR_POLISI,
+          TRAYEK: namaDari(trayekList, 'ID_TRAYEK', r.ID_TRAYEK, 'NAMA_TRAYEK'),
+          PERUSAHAAN: namaDari(perusahaanList, 'ID_PERUSAHAAN', r.ID_PERUSAHAAN, 'NAMA_PERUSAHAAN'),
+          PEMILIK: r.NAMA_PEMILIK || '-',
+          MASA_BERLAKU: r.MASA_BERLAKU, STATUS: r.STATUS_AKTIF
+        };
+      });
+      callServer('api_exportExcel', 'Data_Kendaraan', rows).then(function (res) {
+        window.open(res.url, '_blank');
+      });
+    });
+  </script>
+</body>
+</html>

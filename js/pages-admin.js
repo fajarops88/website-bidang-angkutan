@@ -17,17 +17,25 @@
     });
   }
 
+  // Peran (tabel USER): ADMINISTRATOR & ADMIN KONTEN mengelola semua; PETUGAS ANGKUTAN hanya pengaduan.
+  // (Hak akses yang sebenarnya dijaga di server; ini hanya untuk merapikan menu.)
+  const R_KONTEN = ['ADMINISTRATOR', 'ADMIN KONTEN'];
+  const R_ADUAN = ['ADMINISTRATOR', 'ADMIN KONTEN', 'PETUGAS ANGKUTAN'];
   const MENU = [
-    { r: 'dashboard', t: 'Dashboard', i: 'dashboard' },
-    { r: 'pengaduan', t: 'Pengaduan', i: 'inbox_customize' },
-    { r: 'berita', t: 'Berita', i: 'newspaper' },
-    { r: 'pengumuman', t: 'Pengumuman', i: 'campaign' },
-    { r: 'regulasi', t: 'Regulasi', i: 'gavel' },
-    { r: 'pejabat', t: 'Pejabat dan Pegawai', i: 'badge' },
-    { r: 'profil', t: 'Profil dan Kontak', i: 'domain' },
-    { r: 'survei', t: 'Hasil Survei', i: 'analytics' },
-    { r: 'akun', t: 'Akun', i: 'manage_accounts' }
+    { r: 'dashboard', t: 'Dashboard', i: 'dashboard', p: R_ADUAN },
+    { r: 'pengaduan', t: 'Pengaduan', i: 'inbox_customize', p: R_ADUAN },
+    { r: 'berita', t: 'Berita', i: 'newspaper', p: R_KONTEN },
+    { r: 'pengumuman', t: 'Pengumuman', i: 'campaign', p: R_KONTEN },
+    { r: 'regulasi', t: 'Regulasi', i: 'gavel', p: R_KONTEN },
+    { r: 'pejabat', t: 'Pejabat dan Pegawai', i: 'badge', p: R_KONTEN },
+    { r: 'profil', t: 'Profil dan Kontak', i: 'domain', p: R_KONTEN },
+    { r: 'survei', t: 'Hasil Survei', i: 'analytics', p: R_KONTEN },
+    { r: 'akun', t: 'Akun', i: 'manage_accounts', p: R_ADUAN }
   ];
+  function menuBoleh() {
+    const role = Api.role();
+    return MENU.filter(function (m) { return m.p.indexOf(role) >= 0; });
+  }
 
   function isi() { return document.getElementById('adm-isi'); }
   function tampil(html) { const e = isi(); e.innerHTML = html; return e; }
@@ -50,17 +58,17 @@
   }
 
   // ---------- Kerangka admin ----------
-  let kerangkaSiap = false;
+  let kerangkaSiap = false, kerangkaPeran = '';   // kerangka dibangun ulang bila peran pengguna berganti
   function bangunKerangka() {
     const root = document.getElementById('shell-admin');
     root.innerHTML =
       '<div class="adm"><aside class="adm-side" aria-label="Menu admin"><div class="adm-merk">' + icon('directions_bus') + '<div><strong>Panel Admin</strong><small>' + esc(window.APP_CONFIG.NAMA_BIDANG) + '</small></div></div>' +
-      '<nav class="adm-nav">' + MENU.map(function (m) { return '<a href="#/admin/' + m.r + '" data-adm="' + m.r + '">' + icon(m.i) + '<span>' + esc(m.t) + '</span></a>'; }).join('') + '</nav>' +
-      '<div class="adm-bawah"><a href="#/">' + icon('public') + '<span>Lihat situs</span></a><button type="button" id="adm-keluar">' + icon('logout') + '<span>Keluar</span></button></div></aside>' +
-      '<div class="adm-main"><header class="adm-top"><span class="muted small">Masuk sebagai <strong id="adm-user"></strong></span></header>' +
+      '<nav class="adm-nav">' + menuBoleh().map(function (m) { return '<a href="#/admin/' + m.r + '" data-adm="' + m.r + '">' + icon(m.i) + '<span>' + esc(m.t) + '</span></a>'; }).join('') + '</nav>' +
+      '<div class="adm-bawah">' + (['ADMINISTRATOR', 'PETUGAS ANGKUTAN'].indexOf(Api.role()) >= 0 ? '<a href="simau/dashboard.html">' + icon('directions_bus') + '<span>Buka SIMAU</span></a>' : '') + '<a href="#/">' + icon('public') + '<span>Lihat situs</span></a><button type="button" id="adm-keluar">' + icon('logout') + '<span>Keluar</span></button></div></aside>' +
+      '<div class="adm-main"><header class="adm-top"><span class="muted small">Masuk sebagai <strong id="adm-user"></strong> • <span id="adm-role"></span></span></header>' +
       '<div class="adm-isi" id="adm-isi"></div></div></div>';
     document.getElementById('adm-keluar').addEventListener('click', A.keluar);
-    kerangkaSiap = true;
+    kerangkaSiap = true; kerangkaPeran = Api.role();
   }
 
   A.keluar = async function () {
@@ -71,10 +79,17 @@
   };
 
   A.render = async function (ctx) {
-    if (!Api.token()) { location.hash = '#/login'; return; }
-    if (!kerangkaSiap) bangunKerangka();
+    if (!Api.token() || !Api.sesi()) { Api.hapusToken(); location.hash = '#/login'; return; }
+    // Peran tanpa akses panel website (mis. pemilik kendaraan) dialihkan ke SIMAU
+    if (R_ADUAN.indexOf(Api.role()) < 0) { location.href = Publik.simauUrl('dashboard'); return; }
+    if (!kerangkaSiap || kerangkaPeran !== Api.role()) bangunKerangka();
     document.getElementById('adm-user').textContent = Api.userAdmin() || 'admin';
+    document.getElementById('adm-role').textContent = Api.role();
     const sub = ctx.parts[1] || 'dashboard';
+    if (!menuBoleh().some(function (m) { return m.r === sub; })) {
+      tampil(judul('Tidak ada akses') + UI.kosong('Peran Anda (' + Api.role() + ') tidak memiliki akses ke menu ini.', 'lock'));
+      return;
+    }
     UI.$$('[data-adm]').forEach(function (a) {
       const aktif = a.getAttribute('data-adm') === sub;
       a.classList.toggle('aktif', aktif);
@@ -595,7 +610,7 @@
       '<div class="field"><label class="label" for="ak-baru">Kata sandi baru</label><input id="ak-baru" class="input" type="password" autocomplete="new-password"><p class="hint">Minimal 10 karakter, mengandung huruf dan angka.</p></div>' +
       '<div class="field"><label class="label" for="ak-ulang">Ulangi kata sandi baru</label><input id="ak-ulang" class="input" type="password" autocomplete="new-password"></div>' +
       '<button type="submit" class="btn btn-primary" id="ak-simpan">' + icon('key') + 'Ganti kata sandi</button></form>' +
-      '<div class="alert alert-info form-sempit">' + icon('info') + '<div><strong>Lupa kata sandi?</strong> Buka editor Google Apps Script, pilih fungsi <span class="mono">resetPasswordAdmin</span>, lalu klik Run. Kata sandi baru muncul di Execution Log.</div></div>');
+      '<div class="alert alert-info form-sempit">' + icon('info') + '<div><strong>Lupa kata sandi?</strong> Akun ini sama dengan akun SIMAU. Minta Administrator mengatur ulang kata sandi lewat menu Data User di SIMAU.</div></div>');
     e.querySelector('#ak-form').addEventListener('submit', function (ev) {
       ev.preventDefault();
       const lama = e.querySelector('#ak-lama').value, baru = e.querySelector('#ak-baru').value, ulang = e.querySelector('#ak-ulang').value;

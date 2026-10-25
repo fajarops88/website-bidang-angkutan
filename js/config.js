@@ -2,11 +2,10 @@
  * KONFIGURASI — satu-satunya berkas yang perlu Anda edit
  * ============================================================ */
 window.APP_CONFIG = {
-  // WAJIB: tempel URL aplikasi web Google Apps Script (berakhiran /exec) di antara tanda kutip
-  GAS_URL: 'https://script.google.com/macros/s/AKfycby7gPZPDS2jgZSURbhCGlixaU412V2iqFQqSFZl1XVJwYKuvnquPKHFVx_hHkBGbDiO/exec',
-
-  // Alamat dasar aplikasi SIMAU (URL /exec). Kosongkan untuk menyembunyikan menu SIMAU.
-  SIMAU_URL: 'https://script.google.com/macros/s/AKfycbzD802sxbEdUu8kbovmsUGzfc5gCshaKvT4g0TXKJ1wKCJX4oORHTx23a6wHoVKwA7T5w/exec',
+  // WAJIB: tempel URL aplikasi web Google Apps Script (berakhiran /exec) di antara tanda kutip.
+  // Cukup diisi di SINI: halaman SIMAU (folder simau/) otomatis memakai alamat yang sama.
+  // Gunakan URL /exec milik proyek SIMAU yang sudah digabung (URL yang sama dengan yang dulu dipakai SIMAU).
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbzD802sxbEdUu8kbovmsUGzfc5gCshaKvT4g0TXKJ1wKCJX4oORHTx23a6wHoVKwA7T5w/exec',
 
   // Identitas yang tampil di header dan footer
   NAMA_INSTANSI: 'Dinas Perhubungan Kota Balikpapan',

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: linear-gradient(135deg,#0d3b66,#1d7a8c); min-height:100vh; padding:24px 16px; }
+    .lapor-card { max-width:520px; width:100%; margin:0 auto; }
+  </style>
+</head>
+<body>
+  <div class="card card-modern p-4 lapor-card">
+    <div class="text-center mb-3">
+      <img src="https://upload.wikimedia.org/wikipedia/id/thumb/f/f4/Lambang_Kota_Balikpapan.png/120px-Lambang_Kota_Balikpapan.png" style="width:48px;" onerror="this.style.display='none'">
+      <h6 class="fw-bold mt-2 mb-0" style="color:#0d3b66;">Pengaduan / Temuan Angkutan Umum</h6>
+      <small class="text-muted">Dinas Perhubungan Kota Balikpapan &mdash; Laporkan masalah angkutan umum di sini</small>
+    </div>
+
+    <div id="formArea">
+      <div class="mb-3">
+        <label class="form-label">Jenis Laporan</label>
+        <select class="form-select" id="fJenis">
+          <option value="Pengaduan Masyarakat">Pengaduan Masyarakat</option>
+          <option value="Temuan Petugas">Temuan Petugas Lapangan</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Nomor Polisi Kendaraan <small class="text-muted">(kosongkan jika tidak tahu)</small></label>
+        <input type="text" class="form-control" id="fNopol" placeholder="Contoh: KT 1234 BC" style="text-transform:uppercase;">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Nama Pelapor <small class="text-muted">(boleh dikosongkan / anonim)</small></label>
+        <input type="text" class="form-control" id="fNama" placeholder="Nama Anda">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Nomor HP/WA <small class="text-muted">(opsional, untuk ditindaklanjuti)</small></label>
+        <input type="text" class="form-control" id="fKontak" placeholder="08xxxxxxxxxx">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Lokasi &amp; Waktu Kejadian <small class="text-muted">(opsional)</small></label>
+        <input type="text" class="form-control" id="fLokasi" maxlength="200" placeholder="Contoh: Terminal Batu Ampar, Senin pagi">
+      </div>
+      <div style="position:absolute;left:-9999px;" aria-hidden="true">
+        <label>Jangan diisi<input type="text" id="fWebsite" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Deskripsi Masalah <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="fDeskripsi" rows="4" placeholder="Jelaskan masalah yang ditemukan/dialami, contoh: kendaraan ugal-ugalan, kondisi tidak layak, sopir tidak sopan, dll."></textarea>
+      </div>
+      <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnKirim">Kirim Laporan</button>
+    </div>
+
+    <div id="suksesArea" style="display:none;" class="text-center py-3">
+      <i class="fa-solid fa-circle-check text-success" style="font-size:48px;"></i>
+      <h6 class="fw-bold mt-3">Laporan Berhasil Dikirim</h6>
+      <p class="text-muted" style="font-size:13.5px;">Terima kasih, laporan Anda akan ditindaklanjuti oleh Dinas Perhubungan Kota Balikpapan.</p>
+      <div class="border rounded p-2 mb-3" style="background:#f8f9fa;">
+        <small class="text-muted d-block">Kode Tiket Anda (simpan untuk memantau tindak lanjut)</small>
+        <strong id="kodeTiket" style="font-size:20px;letter-spacing:1px;"></strong><br>
+        <a href="../index.html#/cek-status" style="font-size:13px;">Cek status tiket di situs Bidang Angkutan</a>
+      </div>
+      <button class="btn btn-outline-primary btn-sm" id="btnLagi">Kirim Laporan Lain</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const waktuBuka = Date.now();
+    document.getElementById('btnKirim').addEventListener('click', function () {
+      const jenis = document.getElementById('fJenis').value;
+      const nopol = document.getElementById('fNopol').value.trim();
+      const nama = document.getElementById('fNama').value.trim();
+      const kontak = document.getElementById('fKontak').value.trim();
+      const deskripsi = document.getElementById('fDeskripsi').value.trim();
+      const lokasi = document.getElementById('fLokasi').value.trim();
+      const jebakan = document.getElementById('fWebsite').value;
+
+      if (deskripsi.length < 10) {
+        Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Deskripsi masalah wajib diisi (minimal 10 karakter).' });
+        return;
+      }
+
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Mengirim...';
+
+      google.script.run
+        .withSuccessHandler(function (res) {
+          document.getElementById('kodeTiket').textContent = (res && res.kode) || '-';
+          document.getElementById('formArea').style.display = 'none';
+          document.getElementById('suksesArea').style.display = 'block';
+        })
+        .withFailureHandler(function (err) {
+          btn.disabled = false;
+          btn.textContent = 'Kirim Laporan';
+          Swal.fire({ icon: 'error', title: 'Gagal Mengirim', text: err.message || err });
+        })
+        .api_submitPengaduan(nopol, jenis, nama, kontak, deskripsi, lokasi, Date.now() - waktuBuka, jebakan);
+    });
+
+    document.getElementById('btnLagi').addEventListener('click', function () {
+      document.getElementById('fNopol').value = '';
+      document.getElementById('fNama').value = '';
+      document.getElementById('fKontak').value = '';
+      document.getElementById('fDeskripsi').value = '';
+      document.getElementById('fLokasi').value = '';
+      document.getElementById('suksesArea').style.display = 'none';
+      document.getElementById('formArea').style.display = 'block';
+      const btn = document.getElementById('btnKirim');
+      btn.disabled = false;
+      btn.textContent = 'Kirim Laporan';
+    });
+  </script>
+</body>
+</html>

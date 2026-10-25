@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+</head>
+<body>
+  <div id="sidebarMount"></div>
+  <div class="simantas-content">
+    <div id="topbarMount"></div>
+    <div class="page-body">
+      <div class="card card-modern p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h6 class="fw-semibold mb-0">Data Fasilitas Halte</h6>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm" id="btnExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+            <button class="btn btn-primary btn-sm" id="btnTambah"><i class="fa-solid fa-plus"></i> Tambah Halte</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="tblData" style="width:100%">
+            <thead><tr>
+              <th>Nama Halte</th><th>Foto</th><th>Lokasi</th><th>Kondisi Fasilitas</th><th>Petugas Input</th><th>Tanggal Input</th><th class="no-print">Aksi</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="formModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title" id="formModalTitle">Tambah Halte</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="fRow"><input type="hidden" id="fId"><input type="hidden" id="fFotoUrl">
+        <div class="mb-3">
+          <label class="form-label">Nama Halte</label>
+          <input class="form-control" id="fNamaHalte" placeholder="Contoh: Halte Jl. Jenderal Sudirman">
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-md-5">
+            <label class="form-label">Latitude</label>
+            <input class="form-control" id="fLat" placeholder="-1.267500" inputmode="decimal">
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Longitude</label>
+            <input class="form-control" id="fLng" placeholder="116.831500" inputmode="decimal">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-primary w-100" id="btnAmbilLokasi" title="Ambil lokasi GPS saat ini">
+              <i class="fa-solid fa-location-crosshairs"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Foto Halte</label>
+          <input type="file" class="form-control" id="fFotoInput" accept="image/*" capture="environment">
+          <div class="mt-2" id="fotoPreviewArea"></div>
+        </div>
+
+        <h6 class="fw-semibold mt-3 mb-1" style="font-size:14px;">Kelengkapan Fasilitas</h6>
+        <div class="row g-2 border-bottom pb-1 mb-1" style="font-size:12px; color:#888;">
+          <div class="col-md-5">Item Fasilitas</div><div class="col-md-3">Keterangan</div><div class="col-md-4">Kondisi</div>
+        </div>
+        <div id="fasilitasFormArea"><div class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div></div></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary" id="btnSimpan">Simpan</button>
+      </div>
+    </div></div>
+  </div>
+
+  <script>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    if (!requireLogin()) {}
+    setupSidebar('halte');
+    initTopbar('Fasilitas Halte');
+
+    let dt, formModal, dataCache = [], fasilitasList = [];
+    let pendingFotoBase64 = null, pendingFotoMime = null, pendingFotoName = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      $.fn.dataTable.ext.errMode = 'none'; // matikan popup alert bawaan DataTables (tidak fatal, data tetap tampil normal)
+      formModal = new bootstrap.Modal(document.getElementById('formModal'));
+      dt = $('#tblData').DataTable({ language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/id.json' } });
+      callServer('api_getFasilitasList').then(function (list) {
+        fasilitasList = list;
+        muatData();
+      });
+    });
+
+    document.getElementById('btnAmbilLokasi').addEventListener('click', function () {
+      if (!navigator.geolocation) {
+        Swal.fire({ icon: 'error', title: 'Tidak didukung', text: 'Perangkat/browser ini tidak mendukung GPS.' });
+        return;
+      }
+      const btn = this;
+      btn.disabled = true;
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        document.getElementById('fLat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('fLng').value = pos.coords.longitude.toFixed(6);
+        toastSukses('Lokasi berhasil diambil');
+        btn.disabled = false;
+      }, function (err) {
+        Swal.fire({ icon: 'error', title: 'Gagal mengambil lokasi', text: err.message });
+        btn.disabled = false;
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    });
+
+    document.getElementById('fFotoInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        const result = ev.target.result;
+        pendingFotoBase64 = result.split(',')[1];
+        pendingFotoMime = file.type;
+        pendingFotoName = file.name;
+        document.getElementById('fotoPreviewArea').innerHTML = '<img src="' + result + '" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #ddd;">';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderFasilitasForm(item) {
+      return (fasilitasList || []).map(function (f) {
+        const ket = item ? (item[f.key + '_KET'] || '') : '';
+        const kondisi = item ? (item[f.key + '_KONDISI'] || '') : '';
+        return '<div class="row g-2 align-items-center border-bottom py-2">' +
+          '<div class="col-md-5" style="font-size:13.5px;">' + f.label + '</div>' +
+          '<div class="col-md-3">' +
+            '<select class="form-select form-select-sm fasKet" data-key="' + f.key + '">' +
+              '<option value="">- Pilih -</option>' +
+              '<option value="Ada"' + (ket === 'Ada' ? ' selected' : '') + '>Ada</option>' +
+              '<option value="Tidak"' + (ket === 'Tidak' ? ' selected' : '') + '>Tidak</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="col-md-4">' +
+            '<select class="form-select form-select-sm fasKondisi" data-key="' + f.key + '">' +
+              '<option value="">- Pilih -</option>' +
+              '<option value="Baik"' + (kondisi === 'Baik' ? ' selected' : '') + '>Baik</option>' +
+              '<option value="Buruk"' + (kondisi === 'Buruk' ? ' selected' : '') + '>Buruk</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function ringkasanKondisi(item) {
+      let ada = 0, baik = 0, buruk = 0, tidakAda = 0;
+      (fasilitasList || []).forEach(function (f) {
+        const ket = item[f.key + '_KET'];
+        const kondisi = item[f.key + '_KONDISI'];
+        if (ket === 'Ada') ada++;
+        if (ket === 'Tidak') tidakAda++;
+        if (kondisi === 'Baik') baik++;
+        else if (kondisi === 'Buruk') buruk++;
+      });
+      return '<span class="badge bg-primary me-1">' + ada + ' Ada</span>' +
+             '<span class="badge badge-aktif me-1">' + baik + ' Baik</span>' +
+             '<span class="badge badge-tidak me-1">' + buruk + ' Buruk</span>' +
+             '<span class="badge bg-secondary">' + tidakAda + ' Tidak Ada</span>';
+    }
+
+    function muatData() {
+      callServer('api_listHalte').then(function (rows) {
+        rows = rows || [];
+        dataCache = rows;
+        dt.clear();
+        rows.forEach(function (r) {
+          const aksi =
+            '<button class="btn btn-sm btn-outline-primary btnEdit" data-row="' + r._row + '" title="Edit"><i class="fa-solid fa-pen"></i></button> ' +
+            '<button class="btn btn-sm btn-outline-danger btnHapus" data-row="' + r._row + '" title="Hapus"><i class="fa-solid fa-trash"></i></button>';
+          const foto = r.FOTO_URL
+            ? '<a href="' + r.FOTO_URL + '" target="_blank"><img src="' + r.FOTO_URL + '" style="width:44px;height:44px;object-fit:cover;border-radius:6px;"></a>'
+            : '<span class="text-muted">-</span>';
+          const lokasi = (r.LATITUDE && r.LONGITUDE)
+            ? '<a href="https://www.google.com/maps?q=' + r.LATITUDE + ',' + r.LONGITUDE + '" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-map-location-dot"></i> Peta</a>'
+            : '<span class="text-muted">-</span>';
+          dt.row.add([
+            r.NAMA_HALTE,
+            foto,
+            lokasi,
+            ringkasanKondisi(r),
+            r.PETUGAS_INPUT || '-',
+            r.TANGGAL_INPUT ? new Date(r.TANGGAL_INPUT).toLocaleDateString('id-ID') : '-',
+            aksi
+          ]);
+        });
+        dt.draw();
+        bindRowActions();
+      });
+    }
+
+    function bindRowActions() {
+      $('#tblData').off('click', '.btnEdit').on('click', '.btnEdit', function () {
+        const row = Number($(this).data('row'));
+        const item = dataCache.filter(function (d) { return d._row === row; })[0];
+        document.getElementById('formModalTitle').textContent = 'Edit Halte';
+        document.getElementById('fRow').value = item._row;
+        document.getElementById('fId').value = item.ID_HALTE;
+        document.getElementById('fNamaHalte').value = item.NAMA_HALTE;
+        document.getElementById('fLat').value = item.LATITUDE || '';
+        document.getElementById('fLng').value = item.LONGITUDE || '';
+        document.getElementById('fFotoUrl').value = item.FOTO_URL || '';
+        pendingFotoBase64 = null;
+        document.getElementById('fFotoInput').value = '';
+        document.getElementById('fotoPreviewArea').innerHTML = item.FOTO_URL
+          ? '<img src="' + item.FOTO_URL + '" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #ddd;">'
+          : '';
+        document.getElementById('fasilitasFormArea').innerHTML = renderFasilitasForm(item);
+        formModal.show();
+      });
+      $('#tblData').off('click', '.btnHapus').on('click', '.btnHapus', function () {
+        const row = Number($(this).data('row'));
+        Swal.fire({ title: 'Hapus data halte ini?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e63946', confirmButtonText: 'Hapus' })
+          .then(function (r) { if (r.isConfirmed) callServer('api_deleteHalte', row).then(function () { toastSukses('Data dihapus'); muatData(); }); });
+      });
+    }
+
+    document.getElementById('btnTambah').addEventListener('click', function () {
+      document.getElementById('formModalTitle').textContent = 'Tambah Halte';
+      document.getElementById('fRow').value = '';
+      document.getElementById('fId').value = '';
+      document.getElementById('fNamaHalte').value = '';
+      document.getElementById('fLat').value = '';
+      document.getElementById('fLng').value = '';
+      document.getElementById('fFotoUrl').value = '';
+      document.getElementById('fFotoInput').value = '';
+      document.getElementById('fotoPreviewArea').innerHTML = '';
+      pendingFotoBase64 = null;
+      document.getElementById('fasilitasFormArea').innerHTML = renderFasilitasForm(null);
+      formModal.show();
+    });
+
+    document.getElementById('btnSimpan').addEventListener('click', function () {
+      const namaHalte = document.getElementById('fNamaHalte').value.trim();
+      if (!namaHalte) { Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Nama Halte wajib diisi.' }); return; }
+
+      function lanjutSimpan(fotoUrl) {
+        const data = {
+          _row: document.getElementById('fRow').value || null,
+          ID_HALTE: document.getElementById('fId').value,
+          NAMA_HALTE: namaHalte,
+          LATITUDE: document.getElementById('fLat').value.trim(),
+          LONGITUDE: document.getElementById('fLng').value.trim(),
+          FOTO_URL: fotoUrl !== null ? fotoUrl : (document.getElementById('fFotoUrl').value || '')
+        };
+        (fasilitasList || []).forEach(function (f) {
+          data[f.key + '_KET'] = $('.fasKet[data-key="' + f.key + '"]').val();
+          data[f.key + '_KONDISI'] = $('.fasKondisi[data-key="' + f.key + '"]').val();
+        });
+        callServer('api_saveHalte', data).then(function () {
+          pendingFotoBase64 = null;
+          formModal.hide(); toastSukses('Data tersimpan'); muatData();
+        });
+      }
+
+      if (pendingFotoBase64) {
+        callServer('api_uploadFotoHalte', pendingFotoBase64, pendingFotoMime, pendingFotoName).then(function (res) {
+          lanjutSimpan(res.url);
+        });
+      } else {
+        lanjutSimpan(null);
+      }
+    });
+
+    document.getElementById('btnExport').addEventListener('click', function () {
+      if (!dataCache.length) { Swal.fire({ icon: 'info', title: 'Tidak ada data untuk diexport' }); return; }
+      const rows = dataCache.map(function (r) {
+        const flat = { NAMA_HALTE: r.NAMA_HALTE, LATITUDE: r.LATITUDE || '', LONGITUDE: r.LONGITUDE || '', FOTO_URL: r.FOTO_URL || '' };
+        (fasilitasList || []).forEach(function (f) {
+          flat[f.label + ' - Keterangan'] = r[f.key + '_KET'] || '-';
+          flat[f.label + ' - Kondisi'] = r[f.key + '_KONDISI'] || '-';
+        });
+        flat['Petugas Input'] = r.PETUGAS_INPUT || '-';
+        flat['Tanggal Input'] = r.TANGGAL_INPUT || '';
+        return flat;
+      });
+      callServer('api_exportExcel', 'Fasilitas_Halte', rows).then(function (res) {
+        window.open(res.url, '_blank');
+      });
+    });
+  </script>
+</body>
+</html>

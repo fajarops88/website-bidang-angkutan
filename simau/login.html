@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0d3b66, #1d7a8c); }
+    .login-card { max-width: 400px; width: 100%; border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,.25); border: none; }
+    .login-card .card-header { background: transparent; text-align: center; border: none; padding-top: 34px; }
+    .login-card .card-header img { width: 58px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card login-card">
+    <div class="card-header">
+      <img src="https://upload.wikimedia.org/wikipedia/id/thumb/f/f4/Lambang_Kota_Balikpapan.png/120px-Lambang_Kota_Balikpapan.png" onerror="this.style.display='none'">
+      <h5 class="fw-bold mb-0" style="color:#0d3b66;">SIMAU</h5>
+      <small class="text-muted">Sistem Informasi Manajemen Angkutan<br>Dinas Perhubungan Kota Balikpapan</small>
+    </div>
+    <div class="card-body px-4 pb-4">
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" placeholder="Masukkan username" autofocus>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <div class="input-group">
+          <input type="password" class="form-control" id="password" placeholder="Masukkan password">
+          <button class="btn btn-outline-secondary" type="button" id="togglePw"><i class="fa-solid fa-eye"></i></button>
+        </div>
+      </div>
+      <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnLogin">Masuk</button>
+      <div class="text-center mt-3">
+        <a href="#" id="linkDashboardPublik" style="font-size:12px;"><i class="fa-solid fa-chart-simple"></i> Dashboard Publik &amp; Layanan Masyarakat</a><br>
+        <a href="../index.html" style="font-size:12px;"><i class="fa-solid fa-house"></i> Kembali ke Situs Bidang Angkutan</a>
+      </div>
+      <p class="text-center text-muted mt-2 mb-0" style="font-size:12px;">Fajar Ferdian K &commat;<span id="thnFooter"></span></p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById('thnFooter').textContent = new Date().getFullYear();
+    document.getElementById('linkDashboardPublik').addEventListener('click', function (e) {
+      e.preventDefault();
+      gotoPage('dashboard-publik');
+    });
+
+    document.getElementById('togglePw').addEventListener('click', function () {
+      const pw = document.getElementById('password');
+      const icon = this.querySelector('i');
+      if (pw.type === 'password') { pw.type = 'text'; icon.className = 'fa-solid fa-eye-slash'; }
+      else { pw.type = 'password'; icon.className = 'fa-solid fa-eye'; }
+    });
+
+    function doLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (!username || !password) {
+        Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Username dan password wajib diisi.' });
+        return;
+      }
+      Swal.fire({ title: 'Memeriksa...', didOpen: function () { Swal.showLoading(); }, allowOutsideClick: false });
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (res.success) {
+            sessionStorage.setItem('simantas_token', res.token);
+            sessionStorage.setItem('simantas_session', JSON.stringify(res.session));
+            Swal.fire({ icon: 'success', title: 'Login berhasil', timer: 900, showConfirmButton: false })
+              .then(function () { gotoPage('dashboard'); });
+          } else {
+            Swal.fire({ icon: 'error', title: 'Gagal Login', text: res.message });
+          }
+        })
+        .withFailureHandler(function (err) {
+          Swal.fire({ icon: 'error', title: 'Terjadi Kesalahan', text: err.message || err });
+        })
+        .api_login(username, password);
+    }
+
+    document.getElementById('btnLogin').addEventListener('click', doLogin);
+    document.getElementById('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+
+    // Jika sudah pernah login (token masih ada), langsung ke dashboard
+    (function () {
+      const t = sessionStorage.getItem('simantas_token');
+      if (t) gotoPage('dashboard');
+    })();
+  </script>
+</body>
+</html>

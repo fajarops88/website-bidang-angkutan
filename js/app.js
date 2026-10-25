@@ -66,14 +66,6 @@
       UI.$$('.dd.open').forEach(function (d) { d.classList.remove('open'); d.querySelector('.dd-btn').setAttribute('aria-expanded', 'false'); });
     });
 
-    // Tautan ke SIMAU: tampil hanya bila alamatnya diisi di js/config.js
-    const simau = String(cfg.SIMAU_URL || '').trim();
-    const adaSimau = /^https:\/\/script\.google\.com\//.test(simau);
-    UI.$$('[data-simau]').forEach(function (el) {
-      if (!adaSimau) { el.hidden = true; return; }
-      if (el.getAttribute('data-simau') === 'login') el.setAttribute('href', simau);
-    });
-
     // Identitas dari konfigurasi
     document.getElementById('brand-bidang').textContent = cfg.NAMA_BIDANG;
     document.getElementById('brand-instansi').textContent = cfg.NAMA_INSTANSI;

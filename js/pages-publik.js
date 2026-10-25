@@ -105,10 +105,10 @@
       '<div><strong class="foot-judul">Layanan</strong><ul class="foot-link">' +
       '<li><a href="#/pengaduan">Formulir Pengaduan</a></li><li><a href="#/cek-status">Cek Status Tiket</a></li>' +
       '<li><a href="#/regulasi">Regulasi</a></li><li><a href="#/statistik">Statistik Layanan</a></li>' +
-      (simauUrl('dashboard-publik') ? '<li><a href="#/simau">SIMAU – Data Angkutan</a></li>' : '') + '</ul></div>' +
+      '<li><a href="#/simau">SIMAU – Data Angkutan</a></li></ul></div>' +
       '</div><div class="footer-bawah"><div class="container footer-bawah-in"><span>© ' + new Date().getFullYear() +
       ' Pemerintah Kota Balikpapan • Dinas Perhubungan • ' + esc(cfg.NAMA_BIDANG) + '</span>' +
-      '<span class="foot-login">' + (simauUrl() ? '<a href="' + esc(simauUrl()) + '" target="_blank" rel="noopener noreferrer">' + icon('badge') + ' Login Petugas SIMAU</a>' : '') +
+      '<span class="foot-login"><a href="' + esc(simauUrl()) + '">' + icon('badge') + ' Login Petugas SIMAU</a>' +
       '<a href="#/login">' + icon('shield_person') + ' Login Admin</a></span></div></div>';
   }
 
@@ -187,7 +187,7 @@
       layananKartu('#/cek-status', 'manage_search', 'Cek Status Tiket', 'Pantau perkembangan pengaduan dengan memasukkan Kode Tiket.', 'Lacak progres') +
       layananKartu('#/regulasi', 'gavel', 'Regulasi', 'Cari dan unduh peraturan serta keputusan terkait angkutan.', 'Lihat dokumen') +
       layananKartu('#/survei', 'rate_review', 'Survei Layanan', 'Beri penilaian layanan Bidang Angkutan untuk perbaikan mutu.', 'Isi survei') +
-      (simauUrl('dashboard-publik') ? layananKartu('#/simau', 'directions_bus', 'SIMAU – Data Angkutan', 'Dashboard publik, cek status kendaraan, dan lapor kendaraan angkutan.', 'Buka layanan SIMAU') : '') +
+      layananKartu('#/simau', 'directions_bus', 'SIMAU – Data Angkutan', 'Dashboard publik, cek status kendaraan, dan lapor kendaraan angkutan.', 'Buka layanan SIMAU') +
       '</div></div></section>' +
 
       '<section class="band"><div class="container"><h2 class="band-judul">' + icon('query_stats') + ' Transparansi Layanan</h2><div class="grid grid-4">' +
@@ -215,13 +215,17 @@
     });
   };
 
-  // Alamat halaman SIMAU (aplikasi terpisah). Halaman bawaan SIMAU adalah login, jadi halaman publik dipilih lewat ?page=
+  // Alamat halaman SIMAU: berada di folder simau/ pada situs yang sama (halaman bawaannya login)
   function simauUrl(halaman) {
-    const b = String(cfg.SIMAU_URL || '').trim();
-    if (!/^https:\/\/script\.google\.com\//.test(b)) return '';
-    return halaman ? b + (b.indexOf('?') >= 0 ? '&' : '?') + 'page=' + halaman : b;
+    return 'simau/' + (halaman || 'login') + '.html';
   }
   P.simauUrl = simauUrl;
+
+  // Setelah login: admin/admin konten ke panel website; petugas dan pemilik ke SIMAU
+  P.setelahLogin = function (role) {
+    if (role === 'ADMINISTRATOR' || role === 'ADMIN KONTEN') location.hash = '#/admin';
+    else location.href = simauUrl('dashboard');
+  };
 
   function layananKartu(href, ikon, judul, teks, aksi) {
     const luar = /^https:/.test(href);
@@ -787,13 +791,13 @@
       ['cek-status', 'fact_check', 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Cek kendaraan'],
       ['lapor', 'report', 'Lapor Kendaraan Angkutan', 'Laporkan temuan atau keluhan tentang kendaraan angkutan tertentu.', 'Buat laporan']
     ];
-    const ada = !!simauUrl();
     tampil(kepala([{ t: 'SIMAU' }], 'SIMAU – Data Angkutan',
-      'Sistem Informasi Manajemen Angkutan Umum. Halaman berikut dikelola dalam aplikasi SIMAU dan terbuka di tab baru.', cfg.NAMA_BIDANG) +
-      '<div class="container section">' + (ada
-        ? '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
-          '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Catatan:</strong> Pengaduan di SIMAU berfokus pada kendaraan tertentu. Untuk keluhan layanan angkutan secara umum (halte, rambu, trayek), gunakan <a href="#/pengaduan">Formulir Pengaduan</a> di situs ini.</p></div></div>'
-        : UI.kosong('Tautan SIMAU belum diatur.', 'link_off')) + '</div>');
+      'Sistem Informasi Manajemen Angkutan Umum, bagian dari situs Bidang Angkutan.', cfg.NAMA_BIDANG) +
+      '<div class="container section">' +
+        '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
+        '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Satu sistem pengaduan:</strong> laporan dari Formulir Pengaduan di situs ini dan dari halaman Lapor Kendaraan SIMAU ditangani petugas pada satu daftar yang sama, dan keduanya mendapat Kode Tiket yang dapat dicek di <a href="#/cek-status">Cek Status Tiket</a>. Nomor polisi bersifat opsional pada Formulir Pengaduan.</p></div></div>' +
+        '<p class="center"><a class="btn btn-outline" href="' + esc(simauUrl('login')) + '">' + icon('badge') + 'Login Petugas SIMAU</a></p>' +
+      '</div>');
   };
 
   P.statistik = async function () {
@@ -832,10 +836,10 @@
   // LOGIN ADMIN
   // ============================================================
   P.login = async function () {
-    if (Api.token()) { location.hash = '#/admin'; return; }
+    if (Api.token()) { P.setelahLogin(Api.role()); return; }
     muatDiam();
     const m = tampil('<div class="container section"><div class="login-wrap"><form id="form-login" class="card card-pad stack-lg" novalidate>' +
-      '<div class="center">' + icon('admin_panel_settings', 'login-ikon') + '<h1 class="h2" id="judul-halaman" tabindex="-1">Login Admin</h1><p class="muted">Khusus petugas Bidang Angkutan.</p></div>' +
+      '<div class="center">' + icon('admin_panel_settings', 'login-ikon') + '<h1 class="h2" id="judul-halaman" tabindex="-1">Login Admin</h1><p class="muted">Satu akun untuk panel website dan SIMAU.</p></div>' +
       '<div class="field"><label class="label" for="l-user">Username</label><input id="l-user" class="input" autocomplete="username" autocapitalize="none" required></div>' +
       '<div class="field"><label class="label" for="l-pass">Kata sandi</label><input id="l-pass" class="input" type="password" autocomplete="current-password" required></div>' +
       '<div id="l-galat" class="alert alert-err" role="alert" hidden></div>' +
@@ -852,8 +856,8 @@
       UI.sibuk(btn, true, 'Memeriksa…');
       try {
         const r = await Api.post('login', { username: u, password: p });
-        Api.simpanToken(r.token, r.username);
-        location.hash = '#/admin';
+        Api.simpanToken(r.token, { username: r.username, nama: r.nama, role: r.role, idPemilik: r.idPemilik || '' });
+        P.setelahLogin(r.role);
       } catch (err) {
         box.textContent = err.message; box.hidden = false;
       } finally {

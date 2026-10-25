@@ -77,21 +77,33 @@
     return periksa(json);
   };
 
-  // ---------- Sesi admin (hanya hidup selama tab terbuka) ----------
-  let tokenMemori = '';
+  // ---------- Sesi login (hanya hidup selama tab terbuka) ----------
+  // Kunci penyimpanan SAMA dengan halaman SIMAU (folder simau/), sehingga login di salah satunya
+  // otomatis berlaku di yang lain (satu login untuk seluruh situs).
+  const K_TOKEN = 'simantas_token', K_SESI = 'simantas_session';
+  let tokenMemori = '', sesiMemori = null;
   Api.token = function () {
-    try { return sessionStorage.getItem('adm_token') || tokenMemori; } catch (e) { return tokenMemori; }
+    try { return sessionStorage.getItem(K_TOKEN) || tokenMemori; } catch (e) { return tokenMemori; }
   };
-  Api.simpanToken = function (t, user) {
-    tokenMemori = t;
-    try { sessionStorage.setItem('adm_token', t); sessionStorage.setItem('adm_user', user || ''); } catch (e) { /* abaikan */ }
+  // sesi = { username, nama, role, idPemilik }
+  Api.sesi = function () {
+    try { return JSON.parse(sessionStorage.getItem(K_SESI) || 'null') || sesiMemori; } catch (e) { return sesiMemori; }
+  };
+  Api.simpanToken = function (t, sesi) {
+    tokenMemori = t; sesiMemori = sesi || null;
+    try { sessionStorage.setItem(K_TOKEN, t); sessionStorage.setItem(K_SESI, JSON.stringify(sesi || null)); } catch (e) { /* abaikan */ }
   };
   Api.hapusToken = function () {
-    tokenMemori = '';
-    try { sessionStorage.removeItem('adm_token'); sessionStorage.removeItem('adm_user'); } catch (e) { /* abaikan */ }
+    tokenMemori = ''; sesiMemori = null;
+    try { sessionStorage.removeItem(K_TOKEN); sessionStorage.removeItem(K_SESI); } catch (e) { /* abaikan */ }
   };
   Api.userAdmin = function () {
-    try { return sessionStorage.getItem('adm_user') || ''; } catch (e) { return ''; }
+    const s = Api.sesi();
+    return s ? (s.nama || s.username || '') : '';
+  };
+  Api.role = function () {
+    const s = Api.sesi();
+    return s ? s.role : '';
   };
 
   Api.admin = async function (action, data) {

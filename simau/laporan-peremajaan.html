@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    .lap-header { text-align: center; border-bottom: 3px solid #0d3b66; padding-bottom: 10px; margin-bottom: 16px; }
+    .lap-header img { width: 50px; }
+    .lap-header h5 { color: #0d3b66; font-weight: 700; margin: 6px 0 0; }
+    .lap-dasar { font-size: 11.5px; text-align: center; color: #555; margin-bottom: 14px; }
+    .ttd-box { margin-top: 40px; text-align: right; font-size: 13px; }
+    .ttd-box .inner { display: inline-block; text-align: center; min-width: 240px; }
+  </style>
+</head>
+<body>
+  <div id="sidebarMount"></div>
+  <div class="simantas-content">
+    <div id="topbarMount"></div>
+    <div class="page-body">
+      <div class="card card-modern p-3 mb-3 no-print">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label">Tampilkan</label>
+            <select class="form-select" id="fFilter">
+              <option value="wajib">Hanya yang Wajib Diremajakan (&gt; 15 tahun)</option>
+              <option value="semua">Semua Kendaraan (yang ada data Tahun Pembuatan)</option>
+            </select>
+          </div>
+          <div class="col-md-2"><button class="btn btn-primary w-100" id="btnFilter"><i class="fa-solid fa-magnifying-glass"></i> Tampilkan</button></div>
+          <div class="col-md-3"><button class="btn btn-outline-dark w-100" id="btnCetak"><i class="fa-solid fa-print"></i> Cetak PDF</button></div>
+          <div class="col-md-3"><button class="btn btn-outline-success w-100" id="btnExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button></div>
+        </div>
+        <div class="row g-2 mt-2">
+          <div class="col-md-4"><label class="form-label">Jabatan Penandatangan</label><input class="form-control" id="ttdJabatan" placeholder="KEPALA BIDANG ANGKUTAN"></div>
+          <div class="col-md-4"><label class="form-label">Nama Petugas</label><input class="form-control" id="ttdNama"></div>
+          <div class="col-md-4"><label class="form-label">NIP</label><input class="form-control" id="ttdNip"></div>
+        </div>
+        <div class="row g-2 mt-2">
+          <div class="col-md-4 d-flex align-items-end"><button class="btn btn-secondary w-100" id="btnSimpanTtd">Simpan Tanda Tangan</button></div>
+        </div>
+      </div>
+
+      <div class="card card-modern p-4" id="cetakArea">
+        <div class="lap-header">
+          <img src="https://upload.wikimedia.org/wikipedia/id/thumb/f/f4/Lambang_Kota_Balikpapan.png/120px-Lambang_Kota_Balikpapan.png" onerror="this.style.display='none'">
+          <h5>LAPORAN PEREMAJAAN KENDARAAN ANGKUTAN KOTA</h5>
+          <small>Dinas Perhubungan Kota Balikpapan &mdash; Tanggal Cetak: <span id="judulTanggal">-</span></small>
+        </div>
+        <div class="lap-dasar">Dasar: Pasal 135 Peraturan Daerah Kota Balikpapan Nomor 7 Tahun 2022 &mdash; Kendaraan berusia lebih dari 15 tahun atau tidak memenuhi persyaratan teknis dan laik jalan wajib diremajakan</div>
+
+        <div class="row text-center mb-3">
+          <div class="col-6"><div class="fw-bold fs-4" id="sumTotal">0</div><small>Total Ditampilkan</small></div>
+          <div class="col-6"><div class="fw-bold fs-4 text-danger" id="sumWajib">0</div><small>Wajib Diremajakan</small></div>
+        </div>
+
+        <table class="table table-bordered table-sm">
+          <thead><tr>
+            <th>No</th><th>No. Polisi</th><th>Trayek</th><th>Perusahaan</th><th>Tahun Pembuatan</th><th>Usia</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbodyLaporan"></tbody>
+        </table>
+
+        <div class="ttd-box">
+          <div class="inner">
+            MENGETAHUI<br><span id="ttdJabatanCetak" style="font-weight:700;">KEPALA BIDANG ANGKUTAN</span><br><br><br><br>
+            <span id="ttdNamaCetak" style="font-weight:700; text-decoration:underline;">&nbsp;</span><br>
+            <span id="ttdNipCetak">&nbsp;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) {}
+    setupSidebar('laporan-peremajaan');
+    initTopbar('Laporan Peremajaan Kendaraan');
+
+    let kendaraanData = [], trayekList = [], perusahaanList = [];
+
+    (function () {
+      const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      const now = new Date();
+      document.getElementById('judulTanggal').textContent = now.getDate() + ' ' + bulan[now.getMonth()] + ' ' + now.getFullYear();
+    })();
+
+    callServer('api_getTandaTangan', 'laporan-peremajaan').then(function (t) {
+      document.getElementById('ttdNama').value = t.nama || '';
+      document.getElementById('ttdNip').value = t.nip || '';
+      document.getElementById('ttdJabatan').value = t.jabatan || '';
+      document.getElementById('ttdNamaCetak').textContent = t.nama || '\u00A0';
+      document.getElementById('ttdNipCetak').textContent = t.nip || '\u00A0';
+      document.getElementById('ttdJabatanCetak').textContent = t.jabatan || 'KEPALA BIDANG ANGKUTAN';
+    });
+
+    document.getElementById('btnSimpanTtd').addEventListener('click', function () {
+      const nama = document.getElementById('ttdNama').value.trim();
+      const nip = document.getElementById('ttdNip').value.trim();
+      const jabatan = document.getElementById('ttdJabatan').value.trim();
+      callServer('api_setTandaTangan', 'laporan-peremajaan', nama, nip, jabatan).then(function () {
+        document.getElementById('ttdNamaCetak').textContent = nama || '\u00A0';
+        document.getElementById('ttdNipCetak').textContent = nip || '\u00A0';
+        document.getElementById('ttdJabatanCetak').textContent = jabatan || 'KEPALA BIDANG ANGKUTAN';
+        toastSukses('Tanda tangan disimpan');
+      });
+    });
+
+    function namaDari(list, idField, id, labelField) {
+      const found = list.filter(function (x) { return String(x[idField]) === String(id); })[0];
+      return found ? found[labelField] : '-';
+    }
+
+    let lastRows = [];
+    function tampilkan() {
+      const filter = document.getElementById('fFilter').value;
+      let rows = kendaraanData.filter(function (r) { return r.TAHUN_PEMBUATAN; });
+      if (filter === 'wajib') rows = rows.filter(function (r) { return r.WAJIB_PEREMAJAAN; });
+      rows = rows.slice().sort(function (a, b) { return b.USIA_KENDARAAN - a.USIA_KENDARAAN; });
+      lastRows = rows;
+
+      document.getElementById('sumTotal').textContent = rows.length;
+      document.getElementById('sumWajib').textContent = rows.filter(function (r) { return r.WAJIB_PEREMAJAAN; }).length;
+
+      document.getElementById('tbodyLaporan').innerHTML = rows.map(function (r, i) {
+        const statusTxt = r.WAJIB_PEREMAJAAN
+          ? '<span class="badge" style="background:#e63946;">Wajib Diremajakan</span>'
+          : '<span class="badge bg-secondary">Masih Layak</span>';
+        return '<tr><td>' + (i + 1) + '</td><td>' + r.NOMOR_POLISI + '</td>' +
+          '<td>' + namaDari(trayekList, 'ID_TRAYEK', r.ID_TRAYEK, 'NAMA_TRAYEK') + '</td>' +
+          '<td>' + namaDari(perusahaanList, 'ID_PERUSAHAAN', r.ID_PERUSAHAAN, 'NAMA_PERUSAHAAN') + '</td>' +
+          '<td class="text-center">' + r.TAHUN_PEMBUATAN + '</td>' +
+          '<td class="text-center">' + r.USIA_KENDARAAN + ' tahun</td>' +
+          '<td>' + statusTxt + '</td></tr>';
+      }).join('') || '<tr><td colspan="7" class="text-center text-muted">Tidak ada data</td></tr>';
+    }
+
+    Promise.all([callServer('api_listKendaraan'), callServer('api_getMasterData')]).then(function (res) {
+      kendaraanData = res[0] || [];
+      trayekList = res[1].trayek;
+      perusahaanList = res[1].perusahaan;
+      tampilkan();
+    });
+
+    document.getElementById('fFilter').addEventListener('change', tampilkan);
+    document.getElementById('btnFilter').addEventListener('click', tampilkan);
+    document.getElementById('btnCetak').addEventListener('click', function () { window.print(); });
+    document.getElementById('btnExport').addEventListener('click', function () {
+      if (!lastRows.length) { Swal.fire({ icon: 'info', title: 'Tidak ada data untuk diexport' }); return; }
+      const rows = lastRows.map(function (r) {
+        return {
+          NOMOR_POLISI: r.NOMOR_POLISI,
+          TRAYEK: namaDari(trayekList, 'ID_TRAYEK', r.ID_TRAYEK, 'NAMA_TRAYEK'),
+          PERUSAHAAN: namaDari(perusahaanList, 'ID_PERUSAHAAN', r.ID_PERUSAHAAN, 'NAMA_PERUSAHAAN'),
+          TAHUN_PEMBUATAN: r.TAHUN_PEMBUATAN,
+          USIA: r.USIA_KENDARAAN,
+          STATUS: r.WAJIB_PEREMAJAAN ? 'Wajib Diremajakan' : 'Masih Layak'
+        };
+      });
+      callServer('api_exportExcel', 'Laporan_Peremajaan_Kendaraan', rows).then(function (res) {
+        window.open(res.url, '_blank');
+      });
+    });
+  </script>
+</body>
+</html>

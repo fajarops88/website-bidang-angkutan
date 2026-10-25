@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .rk-timeline { position: relative; padding-left: 28px; }
+    .rk-timeline::before { content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: #dee2e6; }
+    .rk-item { position: relative; margin-bottom: 18px; }
+    .rk-dot { position: absolute; left: -28px; top: 4px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; }
+    .rk-jenis-cek { background: #4361ee; }
+    .rk-jenis-sanksi { background: #e63946; }
+    .rk-jenis-insidentil { background: #f77f00; }
+    .rk-jenis-pengaduan { background: #7209b7; }
+    .rk-tanggal { font-size: 11.5px; color: #888; }
+  </style>
+</head>
+<body>
+  <div id="sidebarMount"></div>
+  <div class="simantas-content">
+    <div id="topbarMount"></div>
+    <div class="page-body">
+      <div class="card card-modern p-3 mb-3" id="headerArea">
+        <div class="text-center py-3"><div class="spinner-border text-primary"></div></div>
+      </div>
+
+      <div class="card card-modern p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h6 class="fw-semibold mb-0">Riwayat Kendaraan</h6>
+          <div class="d-flex gap-2 flex-wrap">
+            <select class="form-select form-select-sm" id="fFilterJenis" style="width:auto;">
+              <option value="">Semua Jenis</option>
+              <option value="Cek Perlengkapan">Cek Perlengkapan</option>
+              <option value="Sanksi">Sanksi</option>
+              <option value="Izin Insidentil">Izin Insidentil</option>
+              <option value="Pengaduan">Pengaduan</option>
+            </select>
+          </div>
+        </div>
+        <div id="timelineArea"><div class="text-center py-3"><div class="spinner-border text-primary"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) {}
+    setupSidebar('kendaraan');
+    initTopbar('Riwayat Kendaraan');
+
+    const kendaraanId = (new URLSearchParams(location.search).get('id') || '');
+    let riwayatData = null;
+
+    function badgeStatus(jenis, status) {
+      const warna = {
+        'Lolos': '#2a9d8f', 'Tidak Lolos': '#e63946',
+        'Aktif': '#2a9d8f', 'Dicabut': '#6c757d', 'Berakhir': '#6c757d',
+        'Baru': '#e63946', 'Diterima': '#e63946', 'Diproses': '#f77f00', 'Selesai': '#2a9d8f'
+      };
+      const c = warna[status] || '#6c757d';
+      return '<span class="badge" style="background:' + c + ';">' + status + '</span>';
+    }
+
+    function jenisDot(jenis) {
+      const map = { 'Cek Perlengkapan': ['rk-jenis-cek', 'fa-clipboard-check'], 'Sanksi': ['rk-jenis-sanksi', 'fa-gavel'], 'Izin Insidentil': ['rk-jenis-insidentil', 'fa-ticket'], 'Pengaduan': ['rk-jenis-pengaduan', 'fa-comment-dots'] };
+      const m = map[jenis] || ['rk-jenis-cek', 'fa-circle'];
+      return '<div class="rk-dot ' + m[0] + '"><i class="fa-solid ' + m[1] + '"></i></div>';
+    }
+
+    function renderTimeline() {
+      const filter = document.getElementById('fFilterJenis').value;
+      let rows = riwayatData.timeline;
+      if (filter) rows = rows.filter(function (r) { return r.jenis === filter; });
+
+      if (!rows.length) {
+        document.getElementById('timelineArea').innerHTML = '<p class="text-muted text-center py-3 mb-0">Belum ada riwayat untuk kendaraan ini.</p>';
+        return;
+      }
+
+      document.getElementById('timelineArea').innerHTML = '<div class="rk-timeline">' + rows.map(function (r) {
+        return '<div class="rk-item">' + jenisDot(r.jenis) +
+          '<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">' +
+            '<div>' +
+              '<span class="badge bg-light text-dark border me-2">' + r.jenis + '</span>' +
+              '<strong>' + escHtml_(r.judul) + '</strong>' +
+            '</div>' +
+            badgeStatus(r.jenis, r.status) +
+          '</div>' +
+          '<div class="rk-tanggal mt-1">' + (r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-') + ' &middot; oleh ' + escHtml_(r.petugas) + '</div>' +
+          '<div class="mt-1" style="font-size:13px;">' + escHtml_(r.deskripsi) + '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+    }
+
+    callServer('api_getRiwayatKendaraan', kendaraanId).then(function (res) {
+      if (!res) {
+        document.getElementById('headerArea').innerHTML = '<p class="text-danger text-center mb-0">Data kendaraan tidak ditemukan.</p>';
+        document.getElementById('timelineArea').innerHTML = '';
+        return;
+      }
+      riwayatData = res;
+      const k = res.kendaraan;
+      const statusBadge = k.STATUS_AKTIF === 'AKTIF' ? '<span class="badge badge-aktif">AKTIF</span>' : '<span class="badge badge-tidak">TIDAK AKTIF</span>';
+      document.getElementById('headerArea').innerHTML =
+        '<div class="row g-2">' +
+          '<div class="col-md-2"><small class="text-muted d-block">No. Polisi</small><strong>' + k.NOMOR_POLISI + '</strong></div>' +
+          '<div class="col-md-2"><small class="text-muted d-block">Trayek</small>' + k.NAMA_TRAYEK + '</div>' +
+          '<div class="col-md-3"><small class="text-muted d-block">Perusahaan</small>' + k.NAMA_PERUSAHAAN + '</div>' +
+          '<div class="col-md-2"><small class="text-muted d-block">Pemilik</small>' + k.NAMA_PEMILIK + '</div>' +
+          '<div class="col-md-2"><small class="text-muted d-block">Masa Berlaku</small>' + (k.MASA_BERLAKU ? new Date(k.MASA_BERLAKU).toLocaleDateString('id-ID') : '-') + '</div>' +
+          '<div class="col-md-1"><small class="text-muted d-block">Status</small>' + statusBadge + '</div>' +
+        '</div>';
+      renderTimeline();
+    });
+
+    document.getElementById('fFilterJenis').addEventListener('change', renderTimeline);
+  </script>
+</body>
+</html>

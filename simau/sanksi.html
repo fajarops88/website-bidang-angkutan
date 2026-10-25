@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+  <style>
+    .badge-teguran { background: #fff3cd; color: #997404; font-weight: 600; }
+    .badge-blokir { background: #ffd9dc; color: #b5171f; font-weight: 600; }
+    .badge-selesai { background: #e2e3e5; color: #41464b; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div id="sidebarMount"></div>
+  <div class="simantas-content">
+    <div id="topbarMount"></div>
+    <div class="page-body">
+      <div class="alert alert-light border small mb-3">
+        <i class="fa-solid fa-scale-balanced text-primary"></i>
+        5 tingkatan sanksi sesuai <strong>Pasal 168 & 169 Peraturan Daerah Kota Balikpapan Nomor 7 Tahun 2022</strong>. Sanksi berupa <strong>Penghentian Sementara/Tetap Kegiatan</strong> dan <strong>Pencabutan Izin</strong> akan otomatis menolak penerbitan Kartu Pengawasan dan ditandai "DIBLOKIR" di halaman Cek Status Kendaraan publik. Khusus <strong>Penghentian Tetap Kegiatan</strong> dan <strong>Pencabutan Izin</strong>, hanya <strong>Administrator</strong> yang dapat menyelesaikan/mencabutnya.
+      </div>
+      <div class="card card-modern p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h6 class="fw-semibold mb-0">Sanksi / Penindakan</h6>
+          <div class="d-flex gap-2 flex-wrap">
+            <input type="text" class="form-control form-control-sm" id="fFilterNopol" placeholder="Filter Nomor Polisi" style="width:200px;">
+            <button class="btn btn-outline-success btn-sm" id="btnExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+            <button class="btn btn-primary btn-sm" id="btnTambah"><i class="fa-solid fa-gavel"></i> Beri Sanksi</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="tblData" style="width:100%">
+            <thead><tr>
+              <th>No. Polisi</th><th>Jenis Sanksi</th><th>Dasar Pasal</th><th>Tanggal Mulai</th><th>Berakhir</th><th>Status</th><th class="no-print">Aksi</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="formModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h6 class="modal-title">Beri Sanksi / Penindakan</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Pilih Kendaraan</label>
+          <select class="form-select" id="fKendaraan"></select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Jenis Sanksi</label>
+          <select class="form-select" id="fJenis"></select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Dasar Pasal</label>
+          <input class="form-control" id="fDasarPasal">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Alasan / Kronologi</label>
+          <textarea class="form-control" id="fAlasan" rows="3" placeholder="Jelaskan pelanggaran yang menjadi dasar sanksi ini..."></textarea>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Tanggal Mulai</label>
+            <input type="date" class="form-control" id="fTglMulai">
+          </div>
+          <div class="col-md-6" id="areaTglBerakhir" style="display:none;">
+            <label class="form-label">Tanggal Berakhir <small class="text-muted">(khusus Penghentian Sementara)</small></label>
+            <input type="date" class="form-control" id="fTglBerakhir">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary" id="btnSimpan">Simpan Sanksi</button>
+      </div>
+    </div></div>
+  </div>
+
+  <script>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    if (!requireLogin()) {}
+    setupSidebar('sanksi');
+    initTopbar('Sanksi / Penindakan');
+
+    const prefillNopol = new URLSearchParams(location.search).get('nopol') || '';
+    const prefillAlasan = new URLSearchParams(location.search).get('alasan') || '';
+    const prefillPengaduanRow = new URLSearchParams(location.search).get('pengaduanRow') || '';
+
+    let dt, formModal, dataCache = [], jenisSanksiList = [], kendaraanList = [];
+    const isAdmin = SIMANTAS.session && SIMANTAS.session.role === 'ADMINISTRATOR';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      $.fn.dataTable.ext.errMode = 'none';
+      formModal = new bootstrap.Modal(document.getElementById('formModal'));
+      dt = $('#tblData').DataTable({ language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/id.json' } });
+      Promise.all([callServer('api_getJenisSanksiList'), callServer('api_listKendaraan')]).then(function (res) {
+        jenisSanksiList = res[0];
+        kendaraanList = res[1] || [];
+        const selK = document.getElementById('fKendaraan');
+        selK.innerHTML = '<option value="">- Pilih Kendaraan -</option>' + kendaraanList.map(function (k) {
+          return '<option value="' + k.ID_KENDARAAN + '" data-nopol="' + k.NOMOR_POLISI + '">' + k.NOMOR_POLISI + '</option>';
+        }).join('');
+        const selJ = document.getElementById('fJenis');
+        selJ.innerHTML = jenisSanksiList.map(function (j) {
+          return '<option value="' + j.label + '" data-key="' + j.key + '" data-dasar="' + j.dasarDefault + '" data-blocking="' + j.isBlocking + '">' + j.label + '</option>';
+        }).join('');
+        muatData();
+
+        if (prefillNopol) {
+          document.getElementById('fTglMulai').value = new Date().toISOString().slice(0, 10);
+          document.getElementById('fDasarPasal').value = jenisSanksiList[0] ? jenisSanksiList[0].dasarDefault : '';
+          document.getElementById('fAlasan').value = prefillAlasan
+            ? 'Berdasarkan laporan pengaduan/temuan: ' + prefillAlasan
+            : '';
+          const opsi = Array.prototype.slice.call(selK.options).filter(function (o) { return o.getAttribute('data-nopol') === prefillNopol; })[0];
+          if (opsi) selK.value = opsi.value;
+          else {
+            Swal.fire({ icon: 'info', title: 'Kendaraan tidak ditemukan', text: 'Nomor Polisi "' + prefillNopol + '" dari laporan tidak ada di Data Kendaraan. Silakan pilih manual.' });
+          }
+          formModal.show();
+        }
+      });
+    });
+
+    document.getElementById('fJenis').addEventListener('change', function () {
+      const opt = this.options[this.selectedIndex];
+      document.getElementById('fDasarPasal').value = opt.getAttribute('data-dasar');
+      document.getElementById('areaTglBerakhir').style.display = (opt.getAttribute('data-key') === 'PENGHENTIAN_SEMENTARA') ? 'block' : 'none';
+    });
+
+    function infoJenis(jenis) {
+      return jenisSanksiList.filter(function (j) { return j.label === jenis; })[0] || null;
+    }
+
+    function badgeJenis(jenis, status) {
+      if (status !== 'Aktif') return '<span class="badge badge-selesai">' + status + '</span>';
+      const item = infoJenis(jenis);
+      const cls = item && item.isBlocking ? 'badge-blokir' : 'badge-teguran';
+      return '<span class="badge ' + cls + '">' + jenis + '</span>';
+    }
+
+    function muatData() {
+      callServer('api_listSanksi').then(function (rows) {
+        rows = rows || [];
+        const filterNopol = document.getElementById('fFilterNopol').value.trim().toUpperCase();
+        let filtered = rows;
+        if (filterNopol) filtered = filtered.filter(function (r) { return String(r.NOMOR_POLISI || '').toUpperCase().indexOf(filterNopol) !== -1; });
+        dataCache = filtered;
+
+        dt.clear();
+        filtered.slice().reverse().forEach(function (r) {
+          let aksi = '';
+          if (r.STATUS === 'Aktif') {
+            const jenisInfo = infoJenis(r.JENIS_SANKSI);
+            const perluAdmin = jenisInfo && jenisInfo.isPermanent;
+            if (perluAdmin && !isAdmin) {
+              aksi = '<span class="badge bg-secondary" title="Sanksi permanen - hanya Administrator yang dapat menyelesaikan"><i class="fa-solid fa-lock"></i> Perlu Administrator</span>';
+            } else {
+              aksi = '<button class="btn btn-sm btn-outline-warning btnSelesaikan" data-row="' + r._row + '" title="Selesaikan Sanksi"><i class="fa-solid fa-check"></i> Selesaikan</button>';
+            }
+          }
+          dt.row.add([
+            r.NOMOR_POLISI,
+            badgeJenis(r.JENIS_SANKSI, r.STATUS),
+            r.DASAR_PASAL || '-',
+            r.TANGGAL_MULAI ? new Date(r.TANGGAL_MULAI).toLocaleDateString('id-ID') : '-',
+            r.TANGGAL_BERAKHIR ? new Date(r.TANGGAL_BERAKHIR).toLocaleDateString('id-ID') : '-',
+            r.STATUS,
+            aksi
+          ]);
+        });
+        dt.draw();
+        bindRowActions();
+      });
+    }
+
+    function prosesKeliru(row) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Konfirmasi Penghapusan Permanen',
+        html: 'Data sanksi ini akan <b>dihapus permanen</b> dan tidak akan muncul lagi di Riwayat Kendaraan.<br>Ketik <b>HAPUS</b> untuk konfirmasi.',
+        input: 'text',
+        inputPlaceholder: 'Ketik HAPUS',
+        showCancelButton: true,
+        confirmButtonText: 'Hapus Permanen',
+        confirmButtonColor: '#e63946',
+        preConfirm: function (val) {
+          if (val !== 'HAPUS') { Swal.showValidationMessage('Ketik persis: HAPUS'); return false; }
+          return true;
+        }
+      }).then(function (r) {
+        if (r.isConfirmed) {
+          callServer('api_deleteSanksi', row).then(function () { toastSukses('Sanksi dihapus'); muatData(); });
+        }
+      });
+    }
+
+    function prosesSelesai(row) {
+      Swal.fire({
+        title: 'Catatan Penyelesaian',
+        input: 'textarea',
+        inputPlaceholder: 'Catatan penyelesaian (opsional)...',
+        showCancelButton: true,
+        confirmButtonText: 'Selesaikan'
+      }).then(function (r) {
+        if (r.isConfirmed) {
+          callServer('api_selesaikanSanksi', row, r.value || '').then(function () { toastSukses('Sanksi ditandai selesai'); muatData(); });
+        }
+      });
+    }
+
+    function bindRowActions() {
+      $('#tblData').off('click', '.btnSelesaikan').on('click', '.btnSelesaikan', function () {
+        const row = Number($(this).data('row'));
+        Swal.fire({
+          title: 'Selesaikan Sanksi',
+          input: 'radio',
+          inputOptions: {
+            selesai: 'Masa Hukuman Selesai / Sudah Dijalani (tetap tercatat di Riwayat Kendaraan)',
+            keliru: 'Keliru / Kesalahan Administratif (data akan dihapus permanen)'
+          },
+          inputValidator: function (value) { if (!value) return 'Pilih salah satu alasan'; },
+          showCancelButton: true,
+          confirmButtonText: 'Lanjut'
+        }).then(function (r) {
+          if (!r.isConfirmed) return;
+          if (r.value === 'keliru') prosesKeliru(row);
+          else prosesSelesai(row);
+        });
+      });
+    }
+
+    document.getElementById('fFilterNopol').addEventListener('input', function () {
+      clearTimeout(window.__filterTimer);
+      window.__filterTimer = setTimeout(muatData, 350);
+    });
+
+    document.getElementById('btnTambah').addEventListener('click', function () {
+      document.getElementById('fKendaraan').value = '';
+      document.getElementById('fJenis').selectedIndex = 0;
+      document.getElementById('fDasarPasal').value = jenisSanksiList[0] ? jenisSanksiList[0].dasarDefault : '';
+      document.getElementById('fAlasan').value = '';
+      document.getElementById('fTglMulai').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('fTglBerakhir').value = '';
+      document.getElementById('areaTglBerakhir').style.display = 'none';
+      formModal.show();
+    });
+
+    document.getElementById('btnSimpan').addEventListener('click', function () {
+      const selK = document.getElementById('fKendaraan');
+      if (!selK.value) { Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Pilih kendaraan yang akan diberi sanksi.' }); return; }
+      const nopol = selK.options[selK.selectedIndex].getAttribute('data-nopol');
+      const alasan = document.getElementById('fAlasan').value.trim();
+      if (!alasan) { Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Alasan/kronologi wajib diisi.' }); return; }
+
+      const data = {
+        ID_KENDARAAN: selK.value,
+        NOMOR_POLISI: nopol,
+        JENIS_SANKSI: document.getElementById('fJenis').value,
+        DASAR_PASAL: document.getElementById('fDasarPasal').value.trim(),
+        ALASAN: alasan,
+        TANGGAL_MULAI: document.getElementById('fTglMulai').value,
+        TANGGAL_BERAKHIR: document.getElementById('fTglBerakhir').value || '',
+        pengaduanRow: prefillPengaduanRow || ''
+      };
+      callServer('api_saveSanksi', data).then(function () {
+        formModal.hide();
+        toastSukses(prefillPengaduanRow ? 'Sanksi tersimpan, laporan pengaduan otomatis ditandai Selesai' : 'Sanksi tersimpan');
+        muatData();
+      });
+    });
+
+    document.getElementById('btnExport').addEventListener('click', function () {
+      if (!dataCache.length) { Swal.fire({ icon: 'info', title: 'Tidak ada data untuk diexport' }); return; }
+      const rows = dataCache.map(function (r) {
+        return {
+          NOMOR_POLISI: r.NOMOR_POLISI,
+          JENIS_SANKSI: r.JENIS_SANKSI,
+          DASAR_PASAL: r.DASAR_PASAL || '-',
+          ALASAN: r.ALASAN || '-',
+          TANGGAL_MULAI: r.TANGGAL_MULAI || '',
+          TANGGAL_BERAKHIR: r.TANGGAL_BERAKHIR || '',
+          STATUS: r.STATUS,
+          PETUGAS: r.PETUGAS || '-'
+        };
+      });
+      callServer('api_exportExcel', 'Sanksi_Penindakan', rows).then(function (res) {
+        window.open(res.url, '_blank');
+      });
+    });
+  </script>
+</body>
+</html>

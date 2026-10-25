@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMAU - Dinas Perhubungan Kota Balikpapan</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    .lap-header { text-align: center; border-bottom: 3px solid #0d3b66; padding-bottom: 10px; margin-bottom: 16px; }
+    .lap-header img { width: 50px; }
+    .lap-header h5 { color: #0d3b66; font-weight: 700; margin: 6px 0 0; }
+    .ttd-box { margin-top: 40px; text-align: right; font-size: 13px; }
+    .ttd-box .inner { display: inline-block; text-align: center; min-width: 240px; }
+    .ttd-line { border-bottom: 1px solid #333; display: inline-block; min-width: 200px; }
+  </style>
+</head>
+<body>
+  <div id="sidebarMount"></div>
+  <div class="simantas-content">
+    <div id="topbarMount"></div>
+    <div class="page-body">
+      <div class="card card-modern p-3 mb-3 no-print">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-2"><label class="form-label">Bulan</label>
+            <select class="form-select" id="fBulan">
+              <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option>
+              <option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8">Agustus</option>
+              <option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+            </select>
+          </div>
+          <div class="col-md-2"><label class="form-label">Tahun</label><input type="number" class="form-control" id="fTahun"></div>
+          <div class="col-md-3"><label class="form-label">Trayek</label><select class="form-select" id="fTrayek"><option value="">Semua Trayek</option></select></div>
+          <div class="col-md-2"><button class="btn btn-primary w-100" id="btnFilter"><i class="fa-solid fa-magnifying-glass"></i> Tampilkan</button></div>
+          <div class="col-md-1"><button class="btn btn-outline-dark w-100" id="btnCetak" title="Cetak"><i class="fa-solid fa-print"></i></button></div>
+          <div class="col-md-2"><button class="btn btn-outline-success w-100" id="btnExport"><i class="fa-solid fa-file-excel"></i> Excel</button></div>
+        </div>
+        <div class="row g-2 mt-2">
+          <div class="col-md-4"><label class="form-label">Jabatan Penandatangan</label><input class="form-control" id="ttdJabatan" placeholder="KEPALA BIDANG ANGKUTAN"></div>
+          <div class="col-md-4"><label class="form-label">Nama Petugas</label><input class="form-control" id="ttdNama"></div>
+          <div class="col-md-4"><label class="form-label">NIP</label><input class="form-control" id="ttdNip"></div>
+        </div>
+        <div class="row g-2 mt-2">
+          <div class="col-md-4 d-flex align-items-end"><button class="btn btn-secondary w-100" id="btnSimpanTtd">Simpan Tanda Tangan</button></div>
+        </div>
+      </div>
+
+      <div class="card card-modern p-4" id="cetakArea">
+        <div class="lap-header">
+          <img src="https://upload.wikimedia.org/wikipedia/id/thumb/f/f4/Lambang_Kota_Balikpapan.png/120px-Lambang_Kota_Balikpapan.png" onerror="this.style.display='none'">
+          <h5>LAPORAN BULANAN DATA KENDARAAN ANGKUTAN</h5>
+          <small>Dinas Perhubungan Kota Balikpapan &mdash; Periode: <span id="judulPeriode">-</span></small>
+        </div>
+
+        <div class="row text-center mb-3">
+          <div class="col-3"><div class="fw-bold fs-4" id="sumTotal">0</div><small>Total Kendaraan</small></div>
+          <div class="col-3"><div class="fw-bold fs-4 text-success" id="sumAktif">0</div><small>Aktif</small></div>
+          <div class="col-3"><div class="fw-bold fs-4 text-danger" id="sumTidak">0</div><small>Tidak Aktif</small></div>
+          <div class="col-3"><div class="fw-bold fs-4" id="sumTrayek">0</div><small>Trayek Terdata</small></div>
+        </div>
+
+        <h6 class="fw-semibold">Rekap per Trayek</h6>
+        <table class="table table-bordered table-sm mb-4">
+          <thead><tr><th>Trayek</th><th>Jumlah Kendaraan</th></tr></thead>
+          <tbody id="tbodyRekap"></tbody>
+        </table>
+
+        <h6 class="fw-semibold">Detail Kendaraan</h6>
+        <table class="table table-bordered table-sm">
+          <thead><tr><th>No</th><th>No. Polisi</th><th>Trayek</th><th>Perusahaan</th><th>Pemilik</th><th>Masa Berlaku</th><th>Status</th></tr></thead>
+          <tbody id="tbodyDetail"></tbody>
+        </table>
+
+        <div class="ttd-box">
+          <div class="inner">
+            MENGETAHUI<br><span id="ttdJabatanCetak" style="font-weight:700;">KEPALA BIDANG ANGKUTAN</span><br><br><br><br>
+            <span id="ttdNamaCetak" style="font-weight:700; text-decoration:underline;">&nbsp;</span><br>
+            <span id="ttdNipCetak">&nbsp;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) {}
+    setupSidebar('laporan-bulanan');
+    initTopbar('Laporan Bulanan');
+
+    const now = new Date();
+    document.getElementById('fBulan').value = now.getMonth() + 1;
+    document.getElementById('fTahun').value = now.getFullYear();
+
+    let trayekList = [];
+    callServer('api_listTrayek').then(function (rows) {
+      trayekList = rows;
+      const sel = document.getElementById('fTrayek');
+      rows.forEach(function (r) { sel.innerHTML += '<option value="' + r.ID_TRAYEK + '">' + r.NAMA_TRAYEK + '</option>'; });
+    });
+
+    callServer('api_getTandaTangan', 'bulanan').then(function (t) {
+      document.getElementById('ttdNama').value = t.nama || '';
+      document.getElementById('ttdNip').value = t.nip || '';
+      document.getElementById('ttdJabatan').value = t.jabatan || '';
+      document.getElementById('ttdNamaCetak').textContent = t.nama || '\u00A0';
+      document.getElementById('ttdNipCetak').textContent = t.nip || '\u00A0';
+      document.getElementById('ttdJabatanCetak').textContent = t.jabatan || 'KEPALA BIDANG ANGKUTAN';
+    });
+
+    document.getElementById('btnSimpanTtd').addEventListener('click', function () {
+      const nama = document.getElementById('ttdNama').value.trim();
+      const nip = document.getElementById('ttdNip').value.trim();
+      const jabatan = document.getElementById('ttdJabatan').value.trim();
+      callServer('api_setTandaTangan', 'bulanan', nama, nip, jabatan).then(function () {
+        document.getElementById('ttdNamaCetak').textContent = nama || '\u00A0';
+        document.getElementById('ttdNipCetak').textContent = nip || '\u00A0';
+        document.getElementById('ttdJabatanCetak').textContent = jabatan || 'KEPALA BIDANG ANGKUTAN';
+        toastSukses('Tanda tangan disimpan');
+      });
+    });
+
+    const namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    let lastList = [];
+    function tampilkan() {
+      const bulan = document.getElementById('fBulan').value;
+      const tahun = document.getElementById('fTahun').value;
+      const trayek = document.getElementById('fTrayek').value;
+      document.getElementById('judulPeriode').textContent = namaBulan[bulan] + ' ' + tahun;
+      callServer('api_laporanBulanan', bulan, tahun, trayek).then(function (res) {
+        lastList = res.list;
+        document.getElementById('sumTotal').textContent = res.list.length;
+        document.getElementById('sumAktif').textContent = res.totalAktif;
+        document.getElementById('sumTidak').textContent = res.totalTidakAktif;
+        document.getElementById('sumTrayek').textContent = Object.keys(res.rekapPerTrayek).length;
+
+        document.getElementById('tbodyRekap').innerHTML = Object.keys(res.rekapPerTrayek).map(function (idTrayek) {
+          const t = trayekList.filter(function (x) { return String(x.ID_TRAYEK) === String(idTrayek); })[0];
+          return '<tr><td>' + (t ? t.NAMA_TRAYEK : idTrayek) + '</td><td>' + res.rekapPerTrayek[idTrayek] + '</td></tr>';
+        }).join('') || '<tr><td colspan="2" class="text-center text-muted">Tidak ada data</td></tr>';
+
+        document.getElementById('tbodyDetail').innerHTML = res.list.map(function (r, i) {
+          return '<tr><td>' + (i+1) + '</td><td>' + r.NOMOR_POLISI + '</td><td>' + r.NAMA_TRAYEK + '</td><td>' + r.NAMA_PERUSAHAAN + '</td><td>' + r.NAMA_PEMILIK + '</td><td>' + (r.MASA_BERLAKU ? new Date(r.MASA_BERLAKU).toLocaleDateString('id-ID') : '-') + '</td><td>' + r.STATUS_AKTIF + '</td></tr>';
+        }).join('') || '<tr><td colspan="7" class="text-center text-muted">Tidak ada data</td></tr>';
+      });
+    }
+    document.getElementById('btnFilter').addEventListener('click', tampilkan);
+    document.getElementById('btnCetak').addEventListener('click', function () { window.print(); });
+    document.getElementById('btnExport').addEventListener('click', function () {
+      if (!lastList.length) { Swal.fire({ icon: 'info', title: 'Tidak ada data untuk diexport' }); return; }
+      callServer('api_exportExcel', 'Laporan_Bulanan', lastList).then(function (res) { window.open(res.url, '_blank'); });
+    });
+    tampilkan();
+  </script>
+</body>
+</html>

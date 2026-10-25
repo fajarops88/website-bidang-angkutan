@@ -1,23 +1,29 @@
-# Website Bidang Angkutan – Dinas Perhubungan Kota Balikpapan
+# Situs Bidang Angkutan + SIMAU — Dinas Perhubungan Kota Balikpapan
 
-Situs statis (HTML/CSS/JavaScript murni) yang tayang di **GitHub Pages**. Data disimpan di **Google Sheets** dan dilayani oleh **Google Apps Script** sebagai REST API.
+Satu situs di GitHub Pages dengan satu backend Google Apps Script (proyek SIMAU) dan satu Spreadsheet.
 
-## Struktur folder (folder ini = akar repository)
+| Bagian | Lokasi | Keterangan |
+|---|---|---|
+| Website publik (profil, berita, pengumuman, regulasi, pengaduan, survei) | `index.html`, `css/`, `js/` | Aplikasi satu halaman (alamat berawalan `#/`) |
+| Panel konten website | `index.html#/admin` | Untuk peran ADMINISTRATOR dan ADMIN KONTEN |
+| SIMAU (kendaraan, trayek, halte, sanksi, laporan, dst.) | `simau/` | Halaman terpisah; petugas masuk lewat `simau/login.html` |
 
-```
-index.html          halaman utama (satu-satunya HTML)
-css/style.css       gaya tampilan
-js/config.js        PENGATURAN – isi GAS_URL di sini
-js/ui.js            pembantu tampilan
-js/api.js           komunikasi ke Google Apps Script
-js/pages-publik.js  halaman publik
-js/pages-admin.js   panel admin
-js/app.js           router
-```
+## Satu-satunya berkas yang diisi
+`js/config.js` → `GAS_URL` = alamat `/exec` proyek Apps Script SIMAU. Halaman SIMAU otomatis memakai alamat yang sama.
 
-Berkas backend `Kode.gs` **tidak** ada di folder ini; ia ditempel ke Google Apps Script.
+## Login dan peran (tabel USER di Spreadsheet)
+Satu akun berlaku di website dan SIMAU (kunci sesi `simantas_token` / `simantas_session` dipakai bersama).
 
-## Langkah singkat
-1. Pasang backend (lihat `PANDUAN-INSTALASI.md`, Bagian A) lalu salin URL `/exec`.
-2. Buka `js/config.js`, ganti `PASTE_URL_EXEC_DI_SINI` dengan URL tersebut.
-3. Jalankan `git init` **di dalam folder ini**, lalu push ke GitHub dan aktifkan Pages.
+| Peran | Panel website | SIMAU |
+|---|---|---|
+| ADMINISTRATOR | semua menu | penuh |
+| ADMIN KONTEN | semua menu | tidak ada akses |
+| PETUGAS ANGKUTAN | Dashboard dan Pengaduan | penuh (sesuai hak lama) |
+| PEMILIK KENDARAAN | tidak ada | data kendaraan miliknya |
+
+Hak akses yang sebenarnya dijaga di server; pengaturan menu di tampilan hanya merapikan.
+
+## Pengaduan
+Satu daftar pengaduan (sheet `PENGADUAN`). Form di website dan `simau/lapor.html` sama-sama menghasilkan Kode Tiket (`ADU-XXXXXXXX`) yang dicek di halaman Cek Status Tiket. Status: Diterima, Diproses, Selesai.
+
+Backend (`.gs`) tidak ada di folder ini; ia ditempel ke proyek Google Apps Script. Lihat panduan penggabungan.
