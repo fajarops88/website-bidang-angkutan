@@ -801,7 +801,6 @@
       '<div class="container section">' +
         '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
         '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Satu sistem pengaduan:</strong> laporan dari Formulir Pengaduan di situs ini dan dari halaman Lapor Kendaraan SIMAU ditangani petugas pada satu daftar yang sama, dan keduanya mendapat Kode Tiket yang dapat dicek di <a href="#/cek-status">Cek Status Tiket</a>. Nomor polisi bersifat opsional pada Formulir Pengaduan.</p></div></div>' +
-        '<p class="center"><a class="btn btn-outline" href="' + esc(simauUrl('login')) + '">' + icon('badge') + 'Login Petugas SIMAU</a></p>' +
       '</div>');
   };
 
