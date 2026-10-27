@@ -492,3 +492,6 @@ body.no-scroll { overflow: hidden; }
 
 /* Pemisah antar baris daftar (halte) */
 .pemisah { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+
+/* Daftar halte di Beranda: tinggi dibatasi agar halaman tidak memanjang */
+.halte-daftar { max-height: 380px; overflow-y: auto; padding-right: 6px; }
