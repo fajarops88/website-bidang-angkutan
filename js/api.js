@@ -91,6 +91,31 @@
     return json.data;
   };
 
+  // Panggilan PUBLIK ke aplikasi E-Tilang Dishub (proyek Apps Script terpisah, alamat di APP_CONFIG.ETL_URL).
+  // Format E-Tilang: kirim {aksi, data, token}, balasan {ok, data} atau {ok:false, error:{kode,pesan}}.
+  // Hanya aksi publik 'publik.cek' yang diizinkan dari sini; tanpa token.
+  Api.etlSiap = function () {
+    return /^https:\/\/script\.google(usercontent)?\.com\//.test(String(cfg.ETL_URL || ''));
+  };
+  // Alamat tampilan (frontend) E-Tilang untuk tautan "Login Petugas E-Tilang"; kosong bila belum diisi
+  Api.etlWeb = function () {
+    const u = String(cfg.ETL_WEB || '');
+    return /^https:\/\/[^\s"'<>]+$/.test(u) ? u : '';
+  };
+  Api.etl = async function (aksi, data) {
+    if (aksi !== 'publik.cek') throw ApiError('Fungsi tidak diizinkan.', 'ERR');
+    if (!Api.etlSiap()) throw ApiError('Layanan cek surat belum tersedia.', 'NO_URL');
+    const json = await minta(cfg.ETL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ aksi: aksi, data: data || {}, token: '' })
+    });
+    if (!json || json.ok !== true) {
+      throw ApiError((json && json.error && json.error.pesan) || 'Surat tidak ditemukan atau data tidak cocok.', (json && json.error && json.error.kode) || 'ERR');
+    }
+    return json.data;
+  };
+
   // ---------- Sesi login (hanya hidup selama tab terbuka) ----------
   // Kunci penyimpanan SAMA dengan halaman SIMAU (folder simau/), sehingga login di salah satunya
   // otomatis berlaku di yang lain (satu login untuk seluruh situs).

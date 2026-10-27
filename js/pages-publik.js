@@ -109,7 +109,10 @@
       '</div><div class="footer-bawah"><div class="container footer-bawah-in"><span>© ' + new Date().getFullYear() +
       ' Pemerintah Kota Balikpapan • Dinas Perhubungan • ' + esc(cfg.NAMA_BIDANG) + '</span>' +
       '<span class="foot-login"><a href="' + esc(simauUrl()) + '">' + icon('badge') + ' Login Petugas SIMAU</a>' +
+      (Api.etlWeb() ? '<a href="' + esc(Api.etlWeb().replace(/\/+$/, '') + '/#/login') + '" rel="noopener">' + icon('badge') + ' Login Petugas E-Tilang</a>' : '') +
       '<a href="#/login">' + icon('shield_person') + ' Login Admin</a></span></div></div>';
+    const dr = document.getElementById('drawer-etl');
+    if (dr && Api.etlWeb()) { dr.href = Api.etlWeb().replace(/\/+$/, '') + '/#/login'; dr.style.display = ''; }
   }
 
   // ---------- Komponen bersama ----------
@@ -190,6 +193,8 @@
       layananKartu('#/survei', 'rate_review', 'Survei Layanan', 'Beri penilaian layanan Bidang Angkutan untuk perbaikan mutu.', 'Isi survei') +
       '</div></div></section>' +
 
+      blokCekCepat() +
+
       blokDataAngkutan() +
 
       '<section class="band"><div class="container"><h2 class="band-judul">' + icon('query_stats') + ' Transparansi Layanan</h2><div class="grid grid-4">' +
@@ -211,6 +216,7 @@
     );
 
     isiDataAngkutan(main());
+    pasangCekCepat(main());
 
     document.getElementById('form-cepat').addEventListener('submit', function (e) {
       e.preventDefault();
@@ -218,6 +224,93 @@
       location.hash = k ? '#/cek-status/' + encodeURIComponent(k) : '#/cek-status';
     });
   };
+
+  // Tampilan hasil cek (dipakai halaman Cek Status dan kotak Cek Cepat di Beranda)
+  function hasilKendaraan(x) {
+    if (!x) return '<div class="alert alert-warn" role="status">' + icon('warning') + '<div>Nomor polisi tidak ditemukan di database. Pastikan penulisannya sudah benar.</div></div>';
+    const aktif = x.STATUS_AKTIF === 'AKTIF';
+    const label = x.DIBLOKIR ? 'DIBLOKIR' : String(x.STATUS_AKTIF || '-');
+    const tgl = x.MASA_BERLAKU ? UI.fmtTgl(x.MASA_BERLAKU) : '-';
+    return '<div class="card card-pad stack-lg"><div class="center"><span class="badge ' + (x.DIBLOKIR ? 'badge-warn' : (aktif ? 'badge-ok' : 'badge-warn')) + '">' +
+      icon(x.DIBLOKIR ? 'block' : (aktif ? 'check_circle' : 'cancel')) + esc(label) + '</span></div>' +
+      (x.DIBLOKIR ? '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Kendaraan ini sedang dikenakan sanksi: <strong>' + esc(x.JENIS_SANKSI) + '</strong></div></div>' : '') +
+      '<dl class="dl">' + barisData('Nomor polisi', x.NOMOR_POLISI) + barisData('Trayek', x.NAMA_TRAYEK) +
+      barisData('Perusahaan', x.NAMA_PERUSAHAAN) + barisData('Masa berlaku', tgl) + '</dl>' +
+      '<p class="muted small">Melihat kendaraan bermasalah? <a href="#/pengaduan">Sampaikan pengaduan</a>.</p></div>';
+  }
+  function hasilSurat(x) {
+    const st = String(x.status || '-');
+    const sanksi = x.sanksi_dikenakan || x.sanksi || '';
+    return '<div class="card card-pad stack-lg"><div class="center"><span class="badge ' + (st === 'Selesai' ? 'badge-ok' : (st === 'Dibatalkan' ? 'badge-warn' : 'badge-info')) + '">' + esc(st) + '</span></div>' +
+      (x.keterangan ? '<p class="center">' + esc(x.keterangan) + '</p>' : '') +
+      '<dl class="dl">' + barisData('Nomor surat', x.nomor_surat) +
+      barisData('Tanggal terbit', x.tanggal ? UI.fmtTgl(x.tanggal) : '-') +
+      barisData('Jenis pelanggaran', x.jenis || '-') +
+      (sanksi ? barisData('Sanksi', sanksi) : '') + '</dl></div>';
+  }
+  function galatCek(err) {
+    return '<div class="alert alert-err" role="alert">' + icon('error') + '<div>' + esc(err.message) + '</div></div>';
+  }
+
+  // Kotak "Cek Cepat" di Beranda: Kendaraan, dan Surat Tilang bila E-Tilang sudah dinyalakan di config.js
+  function blokCekCepat() {
+    const surat = Api.etlSiap();
+    return '<section class="section"><div class="container"><div class="card card-pad stack-lg" id="cc-kotak">' +
+      '<div><h2>' + (surat ? 'Cek Kendaraan dan Surat Tilang' : 'Cek Kendaraan Angkutan') + '</h2>' +
+      '<p class="muted">' + (surat ? 'Periksa izin kendaraan angkutan atau status surat penindakan. Tanpa login.' : 'Periksa apakah angkutan umum berizin aktif dengan nomor polisi. Tanpa login.') + '</p></div>' +
+      (surat ? '<nav class="chips" role="tablist" aria-label="Jenis pengecekan">' +
+        '<button type="button" class="chip aktif" role="tab" aria-selected="true" data-cc="kendaraan">Kendaraan Angkutan</button>' +
+        '<button type="button" class="chip" role="tab" aria-selected="false" data-cc="surat">Surat Tilang</button></nav>' : '') +
+      '<form id="cc-form-kendaraan" class="cek-form" novalidate><label class="sr-only" for="cc-nopol">Nomor polisi</label>' +
+      '<input id="cc-nopol" class="input mono input-besar" maxlength="15" placeholder="Contoh: KT 1234 BC" autocomplete="off" autocapitalize="characters" spellcheck="false">' +
+      '<button type="submit" class="btn btn-primary">' + icon('search') + 'Cek</button></form>' +
+      (surat ? '<form id="cc-form-surat" class="stack" novalidate hidden>' +
+        '<label class="label" for="cc-nomor">Nomor surat penindakan</label>' +
+        '<input id="cc-nomor" class="input mono input-besar" maxlength="60" placeholder="Contoh: 0012/ETL/DISHUB/X/2026" autocomplete="off" autocapitalize="characters" spellcheck="false">' +
+        '<label class="label" for="cc-nopol-s">Nomor polisi kendaraan</label>' +
+        '<div class="cek-form"><input id="cc-nopol-s" class="input mono input-besar" maxlength="15" placeholder="Contoh: KT 1234 BC" autocomplete="off" autocapitalize="characters" spellcheck="false">' +
+        '<button type="submit" class="btn btn-primary">' + icon('search') + 'Cek</button></div>' +
+        '<p class="hint">Nomor surat dan nomor polisi harus cocok. Nama dan alamat tidak ditampilkan.</p></form>' : '') +
+      '<div id="cc-hasil" aria-live="polite"></div></div></div></section>';
+  }
+
+  function pasangCekCepat(root) {
+    const kotak = root.querySelector('#cc-kotak');
+    if (!kotak) return;
+    const hasil = kotak.querySelector('#cc-hasil');
+    const fk = kotak.querySelector('#cc-form-kendaraan'), fs = kotak.querySelector('#cc-form-surat');
+
+    async function jalankan(form, kerja) {
+      const btn = form.querySelector('button[type="submit"]');
+      UI.sibuk(btn, true, 'Mencari…');
+      hasil.innerHTML = '';
+      try { hasil.innerHTML = await kerja(); }
+      catch (err) { hasil.innerHTML = galatCek(err); }
+      finally { UI.sibuk(btn, false); }
+    }
+    fk.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const nopol = kotak.querySelector('#cc-nopol').value.trim().toUpperCase();
+      if (nopol.length < 3) { hasil.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Masukkan nomor polisi kendaraan.</div></div>'; return; }
+      jalankan(fk, async function () { return hasilKendaraan(await Api.simau('api_publicCekStatusNopol', [nopol])); });
+    });
+    if (fs) {
+      fs.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const nomor = kotak.querySelector('#cc-nomor').value.trim();
+        const nopol = kotak.querySelector('#cc-nopol-s').value.trim().toUpperCase();
+        if (!nomor || nopol.length < 3) { hasil.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Isi nomor surat dan nomor polisi.</div></div>'; return; }
+        jalankan(fs, async function () { return hasilSurat(await Api.etl('publik.cek', { nomor_surat: nomor, nopol: nopol })); });
+      });
+      UI.$$('[data-cc]', kotak).forEach(function (t) {
+        t.addEventListener('click', function () {
+          const surat = t.getAttribute('data-cc') === 'surat';
+          UI.$$('[data-cc]', kotak).forEach(function (x) { const on = x === t; x.classList.toggle('aktif', on); x.setAttribute('aria-selected', on ? 'true' : 'false'); });
+          fk.hidden = surat; fs.hidden = !surat; hasil.innerHTML = '';
+        });
+      });
+    }
+  }
 
   // Data angkutan umum dan fasilitas halte (dari SIMAU), tampil di Beranda
   function blokDataAngkutan() {
@@ -707,11 +800,15 @@
     { s: 'Selesai', t: 'Selesai', k: 'Penanganan pengaduan telah selesai.' }
   ];
 
-  // Dua tab pada halaman Cek Status: tiket pengaduan dan kendaraan angkutan
+  // Tab pada halaman Cek Status: tiket pengaduan, kendaraan angkutan, dan (bila ETL_URL diisi) surat tilang
   function tabCek(aktif) {
+    function chip(kunci, href, teks) {
+      return '<a class="chip' + (aktif === kunci ? ' aktif' : '') + '" href="' + href + '"' + (aktif === kunci ? ' aria-current="page"' : '') + '>' + teks + '</a>';
+    }
     return '<nav class="chips" aria-label="Jenis pengecekan">' +
-      '<a class="chip' + (aktif === 'tiket' ? ' aktif' : '') + '" href="#/cek-status"' + (aktif === 'tiket' ? ' aria-current="page"' : '') + '>Tiket Pengaduan</a>' +
-      '<a class="chip' + (aktif === 'kendaraan' ? ' aktif' : '') + '" href="#/cek-status/kendaraan"' + (aktif === 'kendaraan' ? ' aria-current="page"' : '') + '>Kendaraan Angkutan</a></nav>';
+      chip('tiket', '#/cek-status', 'Tiket Pengaduan') +
+      chip('kendaraan', '#/cek-status/kendaraan', 'Kendaraan Angkutan') +
+      (Api.etlSiap() ? chip('surat', '#/cek-status/surat', 'Surat Tilang') : '') + '</nav>';
   }
 
   function barisData(label, nilai) {
@@ -738,20 +835,7 @@
       box.innerHTML = '';
       try {
         const x = await Api.simau('api_publicCekStatusNopol', [nopol]);
-        if (!x) {
-          box.innerHTML = '<div class="alert alert-warn" role="status">' + icon('warning') + '<div>Nomor polisi tidak ditemukan di database. Pastikan penulisannya sudah benar.</div></div>';
-          return;
-        }
-        const aktif = x.STATUS_AKTIF === 'AKTIF';
-        const label = x.DIBLOKIR ? 'DIBLOKIR' : String(x.STATUS_AKTIF || '-');
-        const tgl = x.MASA_BERLAKU ? UI.fmtTgl(x.MASA_BERLAKU) : '-';
-        box.innerHTML =
-          '<div class="card card-pad stack-lg"><div class="center"><span class="badge ' + (x.DIBLOKIR ? 'badge-warn' : (aktif ? 'badge-ok' : 'badge-warn')) + '">' +
-          icon(x.DIBLOKIR ? 'block' : (aktif ? 'check_circle' : 'cancel')) + esc(label) + '</span></div>' +
-          (x.DIBLOKIR ? '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Kendaraan ini sedang dikenakan sanksi: <strong>' + esc(x.JENIS_SANKSI) + '</strong></div></div>' : '') +
-          '<dl class="dl">' + barisData('Nomor polisi', x.NOMOR_POLISI) + barisData('Trayek', x.NAMA_TRAYEK) +
-          barisData('Perusahaan', x.NAMA_PERUSAHAAN) + barisData('Masa berlaku', tgl) + '</dl>' +
-          '<p class="muted small">Melihat kendaraan bermasalah? <a href="#/pengaduan">Sampaikan pengaduan</a>.</p></div>';
+        box.innerHTML = hasilKendaraan(x);
       } catch (err) {
         box.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>' + esc(err.message) + '</div></div>';
       } finally {
@@ -762,8 +846,46 @@
     m.querySelector('#k-nopol').focus();
   }
 
+  // Cek surat penindakan E-Tilang Dishub (data diambil dari aplikasi E-Tilang; hanya tampil bila ETL_URL diisi)
+  function cekSurat() {
+    const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Surat Tilang' }], 'Cek Status Surat Tilang', 'Periksa status surat penindakan dengan nomor surat dan nomor polisi.', 'Tanpa login') +
+      '<div class="container section"><div class="cek-wrap">' + tabCek('surat') +
+      '<form id="form-surat" class="card card-pad" novalidate>' +
+      '<label class="label" for="s-nomor">Nomor surat penindakan</label>' +
+      '<input id="s-nomor" class="input mono input-besar" maxlength="60" placeholder="Contoh: 0012/ETL/DISHUB/X/2026" autocomplete="off" autocapitalize="characters" spellcheck="false">' +
+      '<label class="label" for="s-nopol" style="margin-top:12px">Nomor polisi kendaraan</label>' +
+      '<div class="cek-form"><input id="s-nopol" class="input mono input-besar" maxlength="15" placeholder="Contoh: KT 1234 BC" autocomplete="off" autocapitalize="characters" spellcheck="false">' +
+      '<button type="submit" class="btn btn-primary" id="s-btn">' + icon('search') + 'Cek</button></div>' +
+      '<p class="hint">Nomor surat dan nomor polisi harus cocok. Nama dan alamat tidak ditampilkan.</p></form>' +
+      '<div id="s-hasil" aria-live="polite"></div></div></div>');
+
+    const box = m.querySelector('#s-hasil');
+    async function cari() {
+      const nomor = m.querySelector('#s-nomor').value.trim();
+      const nopol = m.querySelector('#s-nopol').value.trim().toUpperCase();
+      if (!nomor || nopol.length < 3) {
+        box.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Isi nomor surat dan nomor polisi.</div></div>';
+        return;
+      }
+      const btn = m.querySelector('#s-btn');
+      UI.sibuk(btn, true, 'Memeriksa…');
+      box.innerHTML = '';
+      try {
+        const x = await Api.etl('publik.cek', { nomor_surat: nomor, nopol: nopol });
+        box.innerHTML = hasilSurat(x);
+      } catch (err) {
+        box.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>' + esc(err.message) + '</div></div>';
+      } finally {
+        UI.sibuk(btn, false);
+      }
+    }
+    m.querySelector('#form-surat').addEventListener('submit', function (e) { e.preventDefault(); cari(); });
+    m.querySelector('#s-nomor').focus();
+  }
+
   P.cekStatus = async function (ctx) {
     if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'kendaraan') return cekKendaraan();
+    if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'surat') return Api.etlSiap() ? cekSurat() : (location.replace('#/cek-status'), undefined);
     const awal = decodeURIComponent(ctx.parts[1] || '').toUpperCase();
     const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Tiket' }], 'Cek Status Pengaduan', 'Masukkan Kode Tiket untuk melihat perkembangan tindak lanjut pengaduan Anda.', 'Tanpa login') +
       '<div class="container section"><div class="cek-wrap">' + tabCek('tiket') + '<form id="form-cek" class="card card-pad" novalidate>' +
