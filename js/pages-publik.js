@@ -105,7 +105,7 @@
       '<div><strong class="foot-judul">Layanan</strong><ul class="foot-link">' +
       '<li><a href="#/pengaduan">Formulir Pengaduan</a></li><li><a href="#/cek-status">Cek Status Tiket</a></li>' +
       '<li><a href="#/regulasi">Regulasi</a></li><li><a href="#/statistik">Statistik Layanan</a></li>' +
-      '<li><a href="#/simau">SIMAU – Data Angkutan</a></li></ul></div>' +
+      '</ul></div>' +
       '</div><div class="footer-bawah"><div class="container footer-bawah-in"><span>© ' + new Date().getFullYear() +
       ' Pemerintah Kota Balikpapan • Dinas Perhubungan • ' + esc(cfg.NAMA_BIDANG) + '</span>' +
       '<span class="foot-login"><a href="' + esc(simauUrl()) + '">' + icon('badge') + ' Login Petugas SIMAU</a>' +
@@ -189,7 +189,7 @@
       layananKartu('#/survei', 'rate_review', 'Survei Layanan', 'Beri penilaian layanan Bidang Angkutan untuk perbaikan mutu.', 'Isi survei') +
       '</div></div></section>' +
 
-      '<section class="section section-alt"><div class="container"><div class="judul-baris"><h2>SIMAU – Data Angkutan</h2><a class="link-baca" href="#/simau">Tentang SIMAU' + icon('chevron_right', 'sm') + '</a></div>' +
+      '<section class="section section-alt"><div class="container"><div class="judul-baris"><h2>SIMAU – Data Angkutan</h2></div>' +
       '<div class="grid grid-3">' + SIMAU_KARTU.map(function (k) { return layananKartu(k[0], k[1], k[2], k[3], k[4]); }).join('') + '</div></div></section>' +
 
       '<section class="band"><div class="container"><h2 class="band-judul">' + icon('query_stats') + ' Transparansi Layanan</h2><div class="grid grid-4">' +
@@ -853,15 +853,8 @@
   // ============================================================
   // SIMAU (tautan ke halaman publik aplikasi SIMAU)
   // ============================================================
-  P.simau = function () {
-    const kartu = SIMAU_KARTU;
-    tampil(kepala([{ t: 'SIMAU' }], 'SIMAU – Data Angkutan',
-      'Sistem Informasi Manajemen Angkutan Umum, bagian dari situs Bidang Angkutan.', cfg.NAMA_BIDANG) +
-      '<div class="container section">' +
-        '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(k[0], k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
-        '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Satu sistem pengaduan:</strong> semua laporan, termasuk laporan kendaraan angkutan, dikirim lewat <a href="#/pengaduan">Formulir Pengaduan</a>, ditangani petugas pada satu daftar yang sama, dan mendapat Kode Tiket yang dapat dicek di <a href="#/cek-status">Cek Status</a>. Nomor kendaraan bersifat opsional.</p></div></div>' +
-      '</div>');
-  };
+  // Halaman SIMAU sudah dihapus; tautan lama (#/simau) dialihkan ke Beranda
+  P.simau = function () { location.replace('#/'); };
 
   P.statistik = async function () {
     tampil(kepala([{ t: 'Statistik' }], 'Statistik Layanan') + '<div class="container section">' + UI.rangka(4) + '</div>');
