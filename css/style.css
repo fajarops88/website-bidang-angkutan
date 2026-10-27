@@ -194,13 +194,14 @@ body.no-scroll { overflow: hidden; }
 /* ---------- Beranda ---------- */
 .ticker { background: var(--amber-soft); border-bottom: 1px solid #f0d49a; }
 /* Pemegang tempat saat data pengumuman belum datang (mencegah layar bergeser) */
-.ticker-tunggu { min-height: 47px; }
+.ticker-tunggu { min-height: 44px; }
 .hero-kartu-tunggu { min-height: 220px; }
 .ticker-in { display: flex; align-items: center; gap: 10px; padding-top: 10px; padding-bottom: 10px; font-size: .9rem; }
-.ticker-in a { font-weight: 700; }
+.ticker-in a { font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticker-in .badge { flex: none; }
 .hero { background: linear-gradient(135deg, var(--primary-dark), var(--primary) 70%, #1c4f9e); color: #fff; }
 .hero h1 { color: #fff; }
-.hero-in { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: center; padding-top: 56px; padding-bottom: 56px; }
+.hero-in { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: start; padding-top: 56px; padding-bottom: 56px; }
 .hero-teks p { font-size: 1.1rem; opacity: .92; max-width: 56ch; }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
 .hero-kartu { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); border-radius: var(--r-lg); padding: 24px; text-align: center; }

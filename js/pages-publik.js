@@ -195,7 +195,7 @@
       '<a class="btn btn-light" href="#/cek-status/kendaraan">' + icon('directions_bus') + 'Cek Kendaraan</a></div></div>' +
       '<div id="b-kartu" class="hero-kartu hero-kartu-tunggu" aria-hidden="true"></div>' +
       '</div></section>' +
-      '<div id="b-sisa"><div class="container section">' + UI.rangka(4) + '</div></div>'
+      '<div id="b-sisa"></div>'   // sengaja kosong: kerangka di bawah hero ikut bergeser saat kartu pimpinan terisi (layout shift)
     );
     const d = await muat();
     if (!d) return;
@@ -224,7 +224,7 @@
         (sambutan ? '<p>' + esc(sambutan.length > 200 ? sambutan.substr(0, 200).replace(/\s+\S*$/, '') + '…' : sambutan) + '</p>' : '') + '</div>';
     } else { kt.remove(); }
 
-    el('b-sisa').innerHTML = (
+    const htmlSisa = (
       '<section class="section"><div class="container"><div class="grid grid-svc">' +
       layananKartu('#/pengaduan', 'edit_note', 'Form Pengaduan', 'Laporkan masalah angkutan tanpa login. Anda akan mendapat Kode Tiket.', 'Buat laporan') +
       layananKartu('#/cek-status', 'manage_search', 'Cek Status Tiket', 'Pantau perkembangan pengaduan dengan memasukkan Kode Tiket.', 'Lacak progres') +
@@ -253,6 +253,12 @@
       '<input id="kode-cepat" class="input mono" placeholder="Contoh: ADU-7K3Q9XMB" autocomplete="off" autocapitalize="characters" maxlength="14" required>' +
       '<button class="btn btn-primary" type="submit">Periksa' + icon('arrow_forward') + '</button></form></div></section>'
     );
+
+    // Ganti pembungkus dengan elemen BARU (bukan menulis ulang isinya): elemen lama yang bergeser terhitung layout shift
+    const baru = document.createElement('div');
+    baru.id = 'b-sisa';
+    baru.innerHTML = htmlSisa;
+    el('b-sisa').replaceWith(baru);
 
     isiDataAngkutan(main());
     pasangCekCepat(main());
