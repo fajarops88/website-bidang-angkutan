@@ -160,20 +160,9 @@
   // BERANDA
   // ============================================================
   P.beranda = async function () {
-    tampil('<div class="container section">' + UI.rangka(4) + '</div>');
-    const d = await muat();
-    if (!d) return;
-    const st = d.statistik;
-    const pj = d.pejabat[0];
-    const peng = d.pengumuman[0];
-    const sambutan = pv('sambutan');
-    const nilai = st.survei.responden ? UI.fmtSkor(st.survei.rataTotal) + ' / 5' : '—';
-    const selesai = st.pengaduan.total ? persen(st.pengaduan.persenSelesai) : '—';
-
+    // Tahap 1: gambar bagian atas SEKARANG (tanpa menunggu server) supaya cepat terlihat
     tampil(
-      (peng ? '<aside class="ticker" aria-label="Pengumuman terkini"><div class="container ticker-in">' + icon('campaign') +
-        '<span class="badge badge-amber">Pengumuman</span><a href="#/pengumuman">' + esc(peng.judul) + '</a></div></aside>' : '') +
-
+      '<div id="b-ticker" class="ticker ticker-tunggu" aria-hidden="true"></div>' +
       '<section class="hero"><div class="container hero-in">' +
       '<div class="hero-teks"><span class="eyebrow eyebrow-light">' + icon('verified') + ' Portal Layanan Resmi</span>' +
       '<h1 id="judul-halaman" tabindex="-1">' + esc(cfg.NAMA_BIDANG) + '<br><span>' + esc(cfg.NAMA_INSTANSI) + '</span></h1>' +
@@ -181,11 +170,38 @@
       '<div class="hero-cta"><a class="btn btn-amber" href="#/pengaduan">' + icon('campaign') + 'Ajukan Pengaduan</a>' +
       '<a class="btn btn-light" href="#/cek-status">' + icon('track_changes') + 'Lacak Tiket</a>' +
       '<a class="btn btn-light" href="#/cek-status/kendaraan">' + icon('directions_bus') + 'Cek Kendaraan</a></div></div>' +
-      (pj ? '<div class="hero-kartu">' + avatar(pj.foto, pj.nama, 'avatar avatar-lg') +
-        '<div><strong>' + esc(pj.nama) + '</strong><span>' + esc(pj.jabatan) + '</span>' +
-        (sambutan ? '<p>' + esc(sambutan.length > 200 ? sambutan.substr(0, 200).replace(/\s+\S*$/, '') + '…' : sambutan) + '</p>' : '') + '</div></div>' : '') +
+      '<div id="b-kartu" class="hero-kartu hero-kartu-tunggu" aria-hidden="true"></div>' +
       '</div></section>' +
+      '<div id="b-sisa"><div class="container section">' + UI.rangka(4) + '</div></div>'
+    );
+    const d = await muat();
+    if (!d) return;
+    // Tahap 2: isi bagian yang bergantung pada data
+    const st = d.statistik;
+    const pj = d.pejabat[0];
+    const peng = d.pengumuman[0];
+    const sambutan = pv('sambutan');
+    const nilai = st.survei.responden ? UI.fmtSkor(st.survei.rataTotal) + ' / 5' : '—';
+    const selesai = st.pengaduan.total ? persen(st.pengaduan.persenSelesai) : '—';
+    const el = function (id) { return document.getElementById(id); };
+    if (!el('b-sisa')) return;   // pengguna sudah pindah halaman
 
+    const tk = el('b-ticker');
+    if (peng) {
+      tk.className = 'ticker'; tk.removeAttribute('aria-hidden'); tk.setAttribute('aria-label', 'Pengumuman terkini');
+      tk.innerHTML = '<div class="container ticker-in">' + icon('campaign') +
+        '<span class="badge badge-amber">Pengumuman</span><a href="#/pengumuman">' + esc(peng.judul) + '</a></div>';
+    } else { tk.remove(); }
+
+    const kt = el('b-kartu');
+    if (pj) {
+      kt.className = 'hero-kartu'; kt.removeAttribute('aria-hidden');
+      kt.innerHTML = avatar(pj.foto, pj.nama, 'avatar avatar-lg') +
+        '<div><strong>' + esc(pj.nama) + '</strong><span>' + esc(pj.jabatan) + '</span>' +
+        (sambutan ? '<p>' + esc(sambutan.length > 200 ? sambutan.substr(0, 200).replace(/\s+\S*$/, '') + '…' : sambutan) + '</p>' : '') + '</div>';
+    } else { kt.remove(); }
+
+    el('b-sisa').innerHTML = (
       '<section class="section"><div class="container"><div class="grid grid-svc">' +
       layananKartu('#/pengaduan', 'edit_note', 'Form Pengaduan', 'Laporkan masalah angkutan tanpa login. Anda akan mendapat Kode Tiket.', 'Buat laporan') +
       layananKartu('#/cek-status', 'manage_search', 'Cek Status Tiket', 'Pantau perkembangan pengaduan dengan memasukkan Kode Tiket.', 'Lacak progres') +
@@ -847,7 +863,7 @@
   }
 
   // Cek surat penindakan E-Tilang Dishub (data diambil dari aplikasi E-Tilang; hanya tampil bila ETL_URL diisi)
-  function cekSurat(awal) {
+  function cekSurat() {
     const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Surat Tilang' }], 'Cek Status Surat Tilang', 'Periksa status surat penindakan dengan nomor surat dan nomor polisi.', 'Tanpa login') +
       '<div class="container section"><div class="cek-wrap">' + tabCek('surat') +
       '<form id="form-surat" class="card card-pad" novalidate>' +
@@ -880,19 +896,12 @@
       }
     }
     m.querySelector('#form-surat').addEventListener('submit', function (e) { e.preventDefault(); cari(); });
-    if (awal) { m.querySelector('#s-nomor').value = awal; m.querySelector('#s-nopol').focus(); } else m.querySelector('#s-nomor').focus();
-  }
-
-  // Nomor surat dari alamat (mis. dari QR di surat); dibatasi panjang dan karakter agar aman.
-  function nomorDariUrl(v) {
-    let s = ''; try { s = decodeURIComponent(v || ''); } catch (e) { return ''; }
-    s = s.trim().toUpperCase();
-    return /^[A-Z0-9\/.\-]{5,60}$/.test(s) ? s : '';
+    m.querySelector('#s-nomor').focus();
   }
 
   P.cekStatus = async function (ctx) {
     if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'kendaraan') return cekKendaraan();
-    if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'surat') return Api.etlSiap() ? cekSurat(nomorDariUrl(ctx.parts[2])) : (location.replace('#/cek-status'), undefined);
+    if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'surat') return Api.etlSiap() ? cekSurat() : (location.replace('#/cek-status'), undefined);
     const awal = decodeURIComponent(ctx.parts[1] || '').toUpperCase();
     const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Tiket' }], 'Cek Status Pengaduan', 'Masukkan Kode Tiket untuk melihat perkembangan tindak lanjut pengaduan Anda.', 'Tanpa login') +
       '<div class="container section"><div class="cek-wrap">' + tabCek('tiket') + '<form id="form-cek" class="card card-pad" novalidate>' +

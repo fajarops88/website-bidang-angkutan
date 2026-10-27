@@ -6,11 +6,36 @@
   <title>Bidang Angkutan – Dinas Perhubungan Kota Balikpapan</title>
   <meta name="description" content="Portal resmi Bidang Angkutan Dinas Perhubungan Kota Balikpapan: informasi, regulasi, pengaduan masyarakat, cek status tiket, dan survei layanan.">
   <meta name="theme-color" content="#0F3876">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://bid-angkutan-bpp.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="id_ID">
+  <meta property="og:title" content="Bidang Angkutan – Dinas Perhubungan Kota Balikpapan">
+  <meta property="og:description" content="Portal resmi Bidang Angkutan Dinas Perhubungan Kota Balikpapan: informasi, regulasi, pengaduan masyarakat, cek status tiket, dan survei layanan.">
+  <meta property="og:url" content="https://bid-angkutan-bpp.vercel.app/">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="preconnect" href="https://script.google.com">
+  <script>
+    /* Tandai kapan font ikon siap (sebelum itu ikon disembunyikan agar tidak tampil sebagai teks) */
+    (function () {
+      var h = document.documentElement, sudah = false;
+      function ok() { if (!sudah) { sudah = true; h.classList.add('ikon-siap'); } }
+      window.__ikonCss = function () {
+        if (document.fonts && document.fonts.load) document.fonts.load('22px "Material Symbols Outlined"', 'home').then(ok, ok); else ok();
+      };
+      setTimeout(ok, 4000);
+    })();
+  </script>
+  <!-- Font dimuat tanpa memblokir tampilan pertama -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" onload="this.onload=function(){window.__ikonCss&&window.__ikonCss()};this.rel='stylesheet'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet">
+    <style>html:not(.ikon-siap) .material-symbols-outlined{color:inherit!important}</style>
+  </noscript>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
