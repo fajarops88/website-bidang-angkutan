@@ -289,8 +289,9 @@
   }
 
   // Bagan struktur: pohon dari kolom Atasan; bila belum ada atasan terisi, pejabat pertama menjadi pimpinan
-  function baganStruktur(daftar) {
+  function baganStruktur(daftar, kolPeta) {
     if (!daftar || !daftar.length) return '';
+    kolPeta = kolPeta || {};
     const ada = {}; daftar.forEach(function (p) { ada[p.id] = p; });
     const anak = {}; const akar = [];
     const adaAtasan = daftar.some(function (p) { return p.atasan && ada[p.atasan] && p.atasan !== p.id; });
@@ -305,15 +306,53 @@
       const ks = (anak[p.id] || []).filter(function (c) { return !dipakai[c.id]; });
       return '<li><div class="org-node' + (kedalaman === 0 ? ' org-atas' : '') + '">' + avatar(p.foto, p.nama, 'avatar avatar-sm') +
         '<strong>' + esc(p.nama) + '</strong><span>' + esc(p.jabatan) + '</span>' + (p.golongan ? '<em>' + esc(p.golongan) + '</em>' : '') + '</div>' +
-        (ks.length && kedalaman < 8
-          ? '<ul' + (ks.length >= 3 && ks.every(function (c) { return !(anak[c.id] || []).length; }) ? ' class="org-daun"' : '') + '>' +
-            ks.map(function (c) { return simpul(c, kedalaman + 1); }).join('') + '</ul>'
-          : '') + '</li>';
+        (ks.length && kedalaman < 8 ? daftarAnak(ks, kedalaman, kolPeta[p.id] || 3) : '') + '</li>';
+    }
+    // Bawahan tanpa anak yang jumlahnya melebihi 'kol' dipecah menjadi baris-baris (maks. 'kol' per baris),
+    // baris berikutnya tersambung ke tengah baris di atasnya, sehingga bagan tidak melebar ke kanan.
+    function daftarAnak(ks, kedalaman, kol) {
+      const semuaDaun = ks.every(function (c) { return !(anak[c.id] || []).length; });
+      if (semuaDaun && ks.length > kol) {
+        let baris = '';
+        for (let i = 0; i < ks.length; i += kol) {
+          baris += '<ul>' + ks.slice(i, i + kol).map(function (c) { return simpul(c, kedalaman + 1); }).join('') + '</ul>';
+        }
+        return '<div class="org-lanjut">' + baris + '</div>';
+      }
+      return '<ul>' + ks.map(function (c) { return simpul(c, kedalaman + 1); }).join('') + '</ul>';
     }
     let html = akar.map(function (p) { return simpul(p, 0); }).join('');
     // pengaman bila ada rantai atasan yang berputar
     daftar.forEach(function (p) { if (!dipakai[p.id]) html += simpul(p, 0); });
     return '<div class="org"><ul>' + html + '</ul></div>';
+  }
+
+  // Menentukan jumlah bawahan per baris untuk tiap cabang di bawah pimpinan, sesuai lebar yang tersedia:
+  // semua cabang mulai dari 1 kolom, kolom sisa diberikan ke cabang yang paling panjang (maks. 3 per baris).
+  function kolomMuat(daftar, lebar) {
+    const ada = {}; daftar.forEach(function (p) { ada[p.id] = true; });
+    const akar = daftar.filter(function (p) { return !p.atasan || !ada[p.atasan] || p.atasan === p.id; })[0] || daftar[0];
+    const cabang = daftar.filter(function (p) { return p.atasan === akar.id && p.id !== akar.id; });
+    const n = {}; cabang.forEach(function (c) { n[c.id] = daftar.filter(function (x) { return x.atasan === c.id && x.id !== c.id; }).length; });
+    const lebarPakai = Math.min(lebar, window.innerWidth);
+    const kolom = Math.max(1, Math.floor((lebarPakai - 16) / 184));
+    const hasil = {}; cabang.forEach(function (c) { hasil[c.id] = 1; });
+    if (window.innerWidth <= 640) {            // cabang ditumpuk ke bawah: tiap cabang boleh memakai seluruh lebar
+      cabang.forEach(function (c) { hasil[c.id] = Math.max(1, Math.min(3, n[c.id], kolom)); });
+      return hasil;
+    }
+    let sisa = kolom - cabang.length;
+    while (sisa > 0) {
+      let pilih = null, terbanyak = 1;
+      cabang.forEach(function (c) {
+        const k = hasil[c.id];
+        const baris = Math.ceil(n[c.id] / k);
+        if (k < 3 && k < n[c.id] && baris > terbanyak) { pilih = c; terbanyak = baris; }
+      });
+      if (!pilih) break;
+      hasil[pilih.id]++; sisa--;
+    }
+    return hasil;
   }
 
   P.profil = async function (ctx) {
@@ -337,7 +376,7 @@
       isi = pv('tugas_fungsi') ? '<div class="prosa">' + teksAtauDaftar(pv('tugas_fungsi')) + '</div>' : kosong;
     } else if (sub === 'struktur') {
       const g = pg('struktur_organisasi');
-      const bagan = baganStruktur(d.pejabat);
+      const bagan = baganStruktur(d.pejabat, {});
       isi = (bagan || g)
         ? (bagan ? '<div class="org-bungkus" tabindex="0" role="region" aria-label="Bagan struktur organisasi, dapat digulir">' + bagan + '</div><p class="muted small">Bagan disusun otomatis dari data Pejabat dan Pegawai. Geser ke samping bila bagan melebihi layar.</p>' : '') +
           (g ? '<figure class="figur"><a href="' + esc(g) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(g) + '" alt="Bagan struktur organisasi ' + esc(cfg.NAMA_BIDANG) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption class="muted small">Bagan resmi (gambar). Ketuk atau klik untuk memperbesar.</figcaption></figure>' : '')
@@ -361,6 +400,22 @@
 
     const m = tampil(kepala([{ t: 'Profil Bidang' }, { t: SUB_PROFIL[sub] }], SUB_PROFIL[sub], '', cfg.NAMA_BIDANG) +
       '<div class="container section"><div class="layout-samping"><nav class="subnav" aria-label="Sub halaman profil">' + nav + '</nav><div>' + isi + '</div></div></div>');
+
+    // Bagan: jumlah bawahan per baris menyesuaikan lebar layar; digambar ulang bila ukuran jendela berubah
+    const bungkus = m.querySelector('.org-bungkus');
+    if (bungkus) {
+      let kolSekarang = '';
+      const atur = function () {
+        if (!document.body.contains(bungkus)) { window.removeEventListener('resize', atur); return; }
+        const k = kolomMuat(d.pejabat, bungkus.clientWidth || 900);
+        const kunci = JSON.stringify(k);
+        if (kunci === kolSekarang) return;
+        kolSekarang = kunci;
+        bungkus.innerHTML = baganStruktur(d.pejabat, k);
+      };
+      atur();
+      window.addEventListener('resize', atur);
+    }
 
     const cari = m.querySelector('#cari-pj');
     if (cari) {
