@@ -176,7 +176,8 @@
       '<h1 id="judul-halaman" tabindex="-1">' + esc(cfg.NAMA_BIDANG) + '<br><span>' + esc(cfg.NAMA_INSTANSI) + '</span></h1>' +
       '<p class="lead">Sampaikan pengaduan, pantau status tindak lanjutnya, dan akses informasi serta regulasi angkutan di Kota Balikpapan. Tanpa perlu membuat akun.</p>' +
       '<div class="hero-cta"><a class="btn btn-amber" href="#/pengaduan">' + icon('campaign') + 'Ajukan Pengaduan</a>' +
-      '<a class="btn btn-light" href="#/cek-status">' + icon('track_changes') + 'Lacak Tiket</a></div></div>' +
+      '<a class="btn btn-light" href="#/cek-status">' + icon('track_changes') + 'Lacak Tiket</a>' +
+      '<a class="btn btn-light" href="#/cek-status/kendaraan">' + icon('directions_bus') + 'Cek Kendaraan</a></div></div>' +
       (pj ? '<div class="hero-kartu">' + avatar(pj.foto, pj.nama, 'avatar avatar-lg') +
         '<div><strong>' + esc(pj.nama) + '</strong><span>' + esc(pj.jabatan) + '</span>' +
         (sambutan ? '<p>' + esc(sambutan.length > 200 ? sambutan.substr(0, 200).replace(/\s+\S*$/, '') + '…' : sambutan) + '</p>' : '') + '</div></div>' : '') +
