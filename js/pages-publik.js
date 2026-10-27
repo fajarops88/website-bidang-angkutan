@@ -190,7 +190,7 @@
       '</div></div></section>' +
 
       '<section class="section section-alt"><div class="container"><div class="judul-baris"><h2>SIMAU – Data Angkutan</h2><a class="link-baca" href="#/simau">Tentang SIMAU' + icon('chevron_right', 'sm') + '</a></div>' +
-      '<div class="grid grid-3">' + SIMAU_KARTU.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div></div></section>' +
+      '<div class="grid grid-3">' + SIMAU_KARTU.map(function (k) { return layananKartu(k[0], k[1], k[2], k[3], k[4]); }).join('') + '</div></div></section>' +
 
       '<section class="band"><div class="container"><h2 class="band-judul">' + icon('query_stats') + ' Transparansi Layanan</h2><div class="grid grid-4">' +
       kpi('inbox', UI.fmtAngka(st.pengaduan.total), 'Pengaduan masuk') +
@@ -219,9 +219,9 @@
 
   // Kartu layanan SIMAU (dipakai di Beranda dan halaman SIMAU)
   const SIMAU_KARTU = [
-      ['dashboard-publik', 'monitoring', 'Dashboard Publik', 'Ringkasan jumlah kendaraan angkutan aktif, trayek, perusahaan, dan kondisi halte.', 'Buka dashboard'],
-      ['cek-status', 'fact_check', 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Cek kendaraan'],
-      ['lapor', 'report', 'Lapor Kendaraan Angkutan', 'Laporkan temuan atau keluhan tentang kendaraan angkutan tertentu.', 'Buat laporan']
+      ['#/statistik', 'monitoring', 'Dashboard Publik', 'Ringkasan jumlah kendaraan angkutan aktif, trayek, perusahaan, dan kondisi halte.', 'Buka dashboard'],
+      ['#/cek-status/kendaraan', 'fact_check', 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Cek kendaraan'],
+      ['#/pengaduan', 'report', 'Lapor Kendaraan Angkutan', 'Laporkan temuan atau keluhan tentang kendaraan angkutan tertentu.', 'Buat laporan']
     ];
 
   // Alamat halaman SIMAU: berada di folder simau/ pada situs yang sama (halaman bawaannya login)
@@ -619,10 +619,66 @@
     { s: 'Selesai', t: 'Selesai', k: 'Penanganan pengaduan telah selesai.' }
   ];
 
+  // Dua tab pada halaman Cek Status: tiket pengaduan dan kendaraan angkutan
+  function tabCek(aktif) {
+    return '<nav class="chips" aria-label="Jenis pengecekan">' +
+      '<a class="chip' + (aktif === 'tiket' ? ' aktif' : '') + '" href="#/cek-status"' + (aktif === 'tiket' ? ' aria-current="page"' : '') + '>Tiket Pengaduan</a>' +
+      '<a class="chip' + (aktif === 'kendaraan' ? ' aktif' : '') + '" href="#/cek-status/kendaraan"' + (aktif === 'kendaraan' ? ' aria-current="page"' : '') + '>Kendaraan Angkutan</a></nav>';
+  }
+
+  function barisData(label, nilai) {
+    return '<div><dt>' + esc(label) + '</dt><dd>' + esc(nilai) + '</dd></div>';
+  }
+
+  function cekKendaraan() {
+    const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Kendaraan' }], 'Cek Status Kendaraan', 'Periksa apakah angkutan umum berizin aktif dengan memasukkan nomor polisi.', 'Tanpa login') +
+      '<div class="container section"><div class="cek-wrap">' + tabCek('kendaraan') +
+      '<form id="form-nopol" class="card card-pad" novalidate>' +
+      '<label class="label" for="k-nopol">Nomor polisi</label><div class="cek-form"><input id="k-nopol" class="input mono input-besar" maxlength="15" placeholder="Contoh: KT 1234 BC" autocomplete="off" autocapitalize="characters" spellcheck="false">' +
+      '<button type="submit" class="btn btn-primary" id="k-btn">' + icon('search') + 'Cek</button></div></form>' +
+      '<div id="k-hasil" aria-live="polite"></div></div></div>');
+
+    const box = m.querySelector('#k-hasil');
+    async function cari() {
+      const nopol = m.querySelector('#k-nopol').value.trim().toUpperCase();
+      if (nopol.length < 3) {
+        box.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Masukkan nomor polisi kendaraan.</div></div>';
+        return;
+      }
+      const btn = m.querySelector('#k-btn');
+      UI.sibuk(btn, true, 'Mencari…');
+      box.innerHTML = '';
+      try {
+        const x = await Api.simau('api_publicCekStatusNopol', [nopol]);
+        if (!x) {
+          box.innerHTML = '<div class="alert alert-warn" role="status">' + icon('warning') + '<div>Nomor polisi tidak ditemukan di database. Pastikan penulisannya sudah benar.</div></div>';
+          return;
+        }
+        const aktif = x.STATUS_AKTIF === 'AKTIF';
+        const label = x.DIBLOKIR ? 'DIBLOKIR' : String(x.STATUS_AKTIF || '-');
+        const tgl = x.MASA_BERLAKU ? UI.fmtTgl(x.MASA_BERLAKU) : '-';
+        box.innerHTML =
+          '<div class="card card-pad stack-lg"><div class="center"><span class="badge ' + (x.DIBLOKIR ? 'badge-warn' : (aktif ? 'badge-ok' : 'badge-warn')) + '">' +
+          icon(x.DIBLOKIR ? 'block' : (aktif ? 'check_circle' : 'cancel')) + esc(label) + '</span></div>' +
+          (x.DIBLOKIR ? '<div class="alert alert-err" role="alert">' + icon('error') + '<div>Kendaraan ini sedang dikenakan sanksi: <strong>' + esc(x.JENIS_SANKSI) + '</strong></div></div>' : '') +
+          '<dl class="dl">' + barisData('Nomor polisi', x.NOMOR_POLISI) + barisData('Trayek', x.NAMA_TRAYEK) +
+          barisData('Perusahaan', x.NAMA_PERUSAHAAN) + barisData('Masa berlaku', tgl) + '</dl>' +
+          '<p class="muted small">Melihat kendaraan bermasalah? <a href="#/pengaduan">Sampaikan pengaduan</a>.</p></div>';
+      } catch (err) {
+        box.innerHTML = '<div class="alert alert-err" role="alert">' + icon('error') + '<div>' + esc(err.message) + '</div></div>';
+      } finally {
+        UI.sibuk(btn, false);
+      }
+    }
+    m.querySelector('#form-nopol').addEventListener('submit', function (e) { e.preventDefault(); cari(); });
+    m.querySelector('#k-nopol').focus();
+  }
+
   P.cekStatus = async function (ctx) {
+    if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'kendaraan') return cekKendaraan();
     const awal = decodeURIComponent(ctx.parts[1] || '').toUpperCase();
-    const m = tampil(kepala([{ t: 'Cek Status' }], 'Cek Status Pengaduan', 'Masukkan Kode Tiket untuk melihat perkembangan tindak lanjut pengaduan Anda.', 'Tanpa login') +
-      '<div class="container section"><div class="cek-wrap"><form id="form-cek" class="card card-pad" novalidate>' +
+    const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Tiket' }], 'Cek Status Pengaduan', 'Masukkan Kode Tiket untuk melihat perkembangan tindak lanjut pengaduan Anda.', 'Tanpa login') +
+      '<div class="container section"><div class="cek-wrap">' + tabCek('tiket') + '<form id="form-cek" class="card card-pad" novalidate>' +
       '<label class="label" for="c-kode">Kode Tiket</label><div class="cek-form"><input id="c-kode" class="input mono input-besar" maxlength="14" placeholder="ADU-XXXXXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(awal) + '">' +
       '<button type="submit" class="btn btn-primary" id="c-btn">' + icon('search') + 'Cari status</button></div>' +
       '<div id="c-saya"></div></form><div id="c-hasil" aria-live="polite"></div>' +
@@ -802,8 +858,8 @@
     tampil(kepala([{ t: 'SIMAU' }], 'SIMAU – Data Angkutan',
       'Sistem Informasi Manajemen Angkutan Umum, bagian dari situs Bidang Angkutan.', cfg.NAMA_BIDANG) +
       '<div class="container section">' +
-        '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(simauUrl(k[0]), k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
-        '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Satu sistem pengaduan:</strong> laporan dari Formulir Pengaduan di situs ini dan dari halaman Lapor Kendaraan SIMAU ditangani petugas pada satu daftar yang sama, dan keduanya mendapat Kode Tiket yang dapat dicek di <a href="#/cek-status">Cek Status Tiket</a>. Nomor polisi bersifat opsional pada Formulir Pengaduan.</p></div></div>' +
+        '<div class="grid grid-3">' + kartu.map(function (k) { return layananKartu(k[0], k[1], k[2], k[3], k[4]); }).join('') + '</div>' +
+        '<div class="alert alert-info">' + icon('info') + '<div><p><strong>Satu sistem pengaduan:</strong> semua laporan, termasuk laporan kendaraan angkutan, dikirim lewat <a href="#/pengaduan">Formulir Pengaduan</a>, ditangani petugas pada satu daftar yang sama, dan mendapat Kode Tiket yang dapat dicek di <a href="#/cek-status">Cek Status</a>. Nomor kendaraan bersifat opsional.</p></div></div>' +
       '</div>');
   };
 
@@ -816,8 +872,12 @@
     const maksKat = kat.length ? pa.perKategori[kat[0]] : 0;
     const label = { akses: 'Kemudahan akses informasi dan regulasi', respons: 'Kecepatan respons tindak lanjut pengaduan', petugas: 'Keramahan dan profesionalitas petugas', fasilitas: 'Kondisi fasilitas dan kenyamanan angkutan' };
 
-    tampil(kepala([{ t: 'Statistik' }], 'Statistik Layanan', 'Data agregat pengaduan dan kepuasan masyarakat. Identitas pelapor tidak pernah ditampilkan.', 'Transparansi') +
-      '<div class="container section stack-xl"><div class="grid grid-4">' +
+    const mst = tampil(kepala([{ t: 'Statistik' }], 'Statistik Layanan', 'Data angkutan, pengaduan, dan kepuasan masyarakat. Identitas pelapor tidak pernah ditampilkan.', 'Transparansi') +
+      '<div class="container section stack-xl">' +
+      '<section aria-labelledby="h-angkutan"><h2 class="h3" id="h-angkutan">Data Angkutan Umum</h2>' +
+      '<div id="s-angkutan" class="grid grid-3">' + kpi('directions_bus', '…', 'Kendaraan aktif') + kpi('route', '…', 'Trayek') + kpi('business', '…', 'Perusahaan angkutan') + '</div></section>' +
+      '<section class="card card-pad" aria-labelledby="h-halte"><h2 class="h3" id="h-halte">Fasilitas Halte</h2><div id="s-halte"><p class="muted">Memuat data halte…</p></div></section>' +
+      '<h2 class="h3">Layanan Pengaduan dan Kepuasan</h2><div class="grid grid-4">' +
       kpi('inbox', UI.fmtAngka(pa.total), 'Total pengaduan') +
       kpi('task_alt', pa.total ? persen(pa.persenSelesai) : '—', 'Pengaduan selesai') +
       kpi('star', sv.responden ? UI.fmtSkor(sv.rataTotal) : '—', 'Indeks kepuasan (skala 5)') +
@@ -837,6 +897,36 @@
       (sv.responden ? Object.keys(label).map(function (k) { return barHorizontal(label[k], sv.rataAspek[k], 5, UI.fmtSkor(sv.rataAspek[k]) + ' / 5', 'h-primary'); }).join('') : UI.kosong('Belum ada data survei.', 'rate_review')) + '</section>' +
       '<section class="card card-pad"><h2 class="h3">Rata-rata nilai survei per bulan</h2>' + grafikGaris(sv.perBulan) + '</section></div>' +
       '<p class="muted small center">Data diperbarui otomatis dari sistem. Terakhir dimuat: ' + esc(UI.fmtTgl(d.dibuat, true)) + '</p></div>');
+
+    // Data angkutan dari SIMAU (diambil terpisah agar kegagalannya tidak merusak bagian lain)
+    const rid = ++P.rid;
+    Api.simau('api_publicDashboardStats').then(function (s) {
+      if (rid !== P.rid) return;
+      mst.querySelector('#s-angkutan').innerHTML =
+        kpi('directions_bus', UI.fmtAngka(s.totalKendaraanAktif), 'Kendaraan aktif') +
+        kpi('route', UI.fmtAngka(s.totalTrayek), 'Trayek') +
+        kpi('business', UI.fmtAngka(s.totalPerusahaan), 'Perusahaan angkutan');
+    }).catch(function () {
+      if (rid !== P.rid) return;
+      mst.querySelector('#s-angkutan').innerHTML = '<div class="alert alert-warn" role="status">' + icon('warning') + '<div>Data angkutan belum dapat dimuat. Muat ulang halaman untuk mencoba lagi.</div></div>';
+    });
+    Api.simau('api_publicHalteList').then(function (rows) {
+      if (rid !== P.rid) return;
+      rows = rows || [];
+      mst.querySelector('#s-halte').innerHTML = rows.length
+        ? rows.map(function (r) {
+          const lat = Number(r.LATITUDE), lng = Number(r.LONGITUDE);
+          const peta = (r.LATITUDE !== '' && r.LONGITUDE !== '' && isFinite(lat) && isFinite(lng))
+            ? '<a class="btn btn-outline btn-sm" href="https://www.google.com/maps?q=' + lat + ',' + lng + '" target="_blank" rel="noopener noreferrer">' + icon('location_on', 'sm') + 'Lihat lokasi</a>' : '';
+          return '<div class="kode-baris"><div><strong>' + esc(r.NAMA_HALTE) + '</strong><div class="meta">' +
+            '<span class="badge badge-ok">' + esc(r.baik) + ' baik</span><span class="badge badge-warn">' + esc(r.buruk) + ' buruk</span>' +
+            '<span class="badge badge-muted">' + esc(r.tidakAda) + ' tidak ada</span></div></div>' + peta + '</div>';
+        }).join('<hr class="pemisah">')
+        : '<p class="muted">Belum ada data fasilitas halte.</p>';
+    }).catch(function () {
+      if (rid !== P.rid) return;
+      mst.querySelector('#s-halte').innerHTML = '<p class="muted">Data halte belum dapat dimuat.</p>';
+    });
   };
 
   // ============================================================

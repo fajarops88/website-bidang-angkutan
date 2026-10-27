@@ -77,6 +77,20 @@
     return periksa(json);
   };
 
+  // Panggilan PUBLIK ke fungsi SIMAU (api_public...). Tanpa token; server hanya melayani fungsi publik di sini.
+  // Format SIMAU: kirim {action, token, args[]}, balasan {ok, data}.
+  Api.simau = async function (action, args) {
+    if (!/^api_public[A-Za-z]+$/.test(action)) throw ApiError('Fungsi tidak diizinkan.', 'ERR');
+    pastikanSiap();
+    const json = await minta(cfg.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, token: '', args: args || [] })
+    });
+    if (!json || json.ok !== true) throw ApiError((json && json.message) || 'Permintaan gagal.', 'ERR');
+    return json.data;
+  };
+
   // ---------- Sesi login (hanya hidup selama tab terbuka) ----------
   // Kunci penyimpanan SAMA dengan halaman SIMAU (folder simau/), sehingga login di salah satunya
   // otomatis berlaku di yang lain (satu login untuk seluruh situs).

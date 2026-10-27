@@ -489,3 +489,6 @@ body.no-scroll { overflow: hidden; }
   .adm { display: block; }
   .card { box-shadow: none; }
 }
+
+/* Pemisah antar baris daftar (halte) */
+.pemisah { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }

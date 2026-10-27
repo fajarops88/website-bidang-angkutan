@@ -11,7 +11,7 @@
   };
   const JUDUL = {
     beranda: '', profil: 'Profil Bidang', berita: 'Berita', pengumuman: 'Pengumuman', regulasi: 'Regulasi',
-    pengaduan: 'Pengaduan', cekStatus: 'Cek Status Tiket', survei: 'Survei Layanan', statistik: 'Statistik', simau: 'SIMAU – Data Angkutan', login: 'Login Admin'
+    pengaduan: 'Pengaduan', cekStatus: 'Cek Status', survei: 'Survei Layanan', statistik: 'Statistik', simau: 'SIMAU – Data Angkutan', login: 'Login Admin'
   };
   const AKTIF = { cekStatus: 'cek-status', beranda: 'beranda' };
 
