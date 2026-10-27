@@ -272,7 +272,10 @@
       const ks = (anak[p.id] || []).filter(function (c) { return !dipakai[c.id]; });
       return '<li><div class="org-node' + (kedalaman === 0 ? ' org-atas' : '') + '">' + avatar(p.foto, p.nama, 'avatar avatar-sm') +
         '<strong>' + esc(p.nama) + '</strong><span>' + esc(p.jabatan) + '</span>' + (p.golongan ? '<em>' + esc(p.golongan) + '</em>' : '') + '</div>' +
-        (ks.length && kedalaman < 8 ? '<ul>' + ks.map(function (c) { return simpul(c, kedalaman + 1); }).join('') + '</ul>' : '') + '</li>';
+        (ks.length && kedalaman < 8
+          ? '<ul' + (ks.length >= 3 && ks.every(function (c) { return !(anak[c.id] || []).length; }) ? ' class="org-daun"' : '') + '>' +
+            ks.map(function (c) { return simpul(c, kedalaman + 1); }).join('') + '</ul>'
+          : '') + '</li>';
     }
     let html = akar.map(function (p) { return simpul(p, 0); }).join('');
     // pengaman bila ada rantai atasan yang berputar
