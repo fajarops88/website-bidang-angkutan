@@ -56,6 +56,26 @@
     const p = DATA && DATA.profil && DATA.profil[key];
     return p ? String(p.isi || '').trim() : '';
   }
+  // Teks (Profil/Sejarah/Sambutan) dan poin (Visi/Misi/Tugas/Fungsi) dari tabel baris di panel admin
+  function teks(jenis) {
+    const t = DATA && DATA.teks && DATA.teks[jenis];
+    return t && String(t.isi || '').trim() ? { judul: String(t.judul || '').trim(), isi: String(t.isi).trim() } : null;
+  }
+  function poin(jenis) {
+    const a = DATA && DATA.poin && DATA.poin[jenis];
+    return (a || []).map(function (x) { return String(x.isi || '').trim(); }).filter(Boolean);
+  }
+  function daftarPoin(arr, ordered) {
+    const tag = ordered ? 'ol' : 'ul';
+    return '<' + tag + ' class="list">' + arr.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</' + tag + '>';
+  }
+  function waTautan(no) {
+    let d = String(no || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.charAt(0) === '0') d = '62' + d.substr(1);
+    return 'https://wa.me/' + d;
+  }
+
   function pg(key) {
     const p = DATA && DATA.profil && DATA.profil[key];
     return p ? UI.gambarAman(p.gambar) : '';
@@ -91,7 +111,10 @@
     if (alamat) baris.push(icon('location_on') + '<span>' + esc(alamat) + '</span>');
     if (tel) baris.push(icon('call') + '<span>' + esc(tel) + '</span>');
     if (email) baris.push(icon('mail') + '<span>' + esc(email) + '</span>');
+    const wa = pv('kontak_whatsapp'), petaUrl = pv('kontak_peta');
+    if (wa && waTautan(wa)) baris.push(icon('chat') + '<span><a href="' + esc(waTautan(wa)) + '" target="_blank" rel="noopener noreferrer">WhatsApp ' + esc(wa) + '</a></span>');
     if (jam) baris.push(icon('schedule') + '<span>' + esc(jam) + '</span>');
+    if (/^https:\/\//i.test(petaUrl)) baris.push(icon('map') + '<span><a href="' + esc(petaUrl) + '" target="_blank" rel="noopener noreferrer">Lihat lokasi di peta</a></span>');
 
     const f = document.getElementById('footer');
     if (!f) return;
@@ -180,7 +203,7 @@
     const st = d.statistik;
     const pj = d.pejabat[0];
     const peng = d.pengumuman[0];
-    const sambutan = pv('sambutan');
+    const sambutan = (teks('sambutan') && teks('sambutan').isi) || pv('sambutan');
     const nilai = st.survei.responden ? UI.fmtSkor(st.survei.rataTotal) + ' / 5' : '—';
     const selesai = st.pengaduan.total ? persen(st.pengaduan.persenSelesai) : '—';
     const el = function (id) { return document.getElementById(id); };
@@ -474,15 +497,32 @@
     let isi = '';
     const kosong = UI.kosong('Konten ini belum diisi oleh admin.', 'edit_note');
     if (sub === 'sejarah') {
-      isi = pv('sejarah') ? '<div class="prosa">' + UI.paragraf(pv('sejarah')) + '</div>' : kosong;
-    } else if (sub === 'visi-misi') {
-      isi = (pv('visi') || pv('misi'))
+      const pf = teks('profil'), sj = teks('sejarah');
+      const lama = pv('sejarah');
+      isi = (pf || sj || lama)
         ? '<div class="stack-lg">' +
-          (pv('visi') ? '<div class="card card-visi"><span class="eyebrow eyebrow-light">Visi</span><div class="prosa prosa-terang">' + UI.paragraf(pv('visi')) + '</div></div>' : '') +
-          (pv('misi') ? '<div class="card card-pad"><h2>Misi</h2><div class="prosa">' + UI.daftar(pv('misi'), true) + '</div></div>' : '') + '</div>'
+          (pf ? '<section><h2>' + esc(pf.judul || 'Profil Bidang') + '</h2><div class="prosa">' + UI.paragraf(pf.isi) + '</div></section>' : '') +
+          ((sj || lama) ? '<section>' + (pf ? '<h2>' + esc((sj && sj.judul) || 'Sejarah') + '</h2>' : '') + '<div class="prosa">' + UI.paragraf(sj ? sj.isi : lama) + '</div></section>' : '') + '</div>'
+        : kosong;
+    } else if (sub === 'visi-misi') {
+      const vs = poin('visi'), ms = poin('misi');
+      const adaBaru = vs.length || ms.length;
+      const visiHtml = adaBaru ? (vs.length > 1 ? daftarPoin(vs, true) : (vs.length ? UI.paragraf(vs[0]) : '')) : (pv('visi') ? UI.paragraf(pv('visi')) : '');
+      const misiHtml = adaBaru ? (ms.length ? daftarPoin(ms, true) : '') : (pv('misi') ? UI.daftar(pv('misi'), true) : '');
+      isi = (visiHtml || misiHtml)
+        ? '<div class="stack-lg">' +
+          (visiHtml ? '<div class="card card-visi"><span class="eyebrow eyebrow-light">Visi</span><div class="prosa prosa-terang">' + visiHtml + '</div></div>' : '') +
+          (misiHtml ? '<div class="card card-pad"><h2>Misi</h2><div class="prosa">' + misiHtml + '</div></div>' : '') + '</div>'
         : kosong;
     } else if (sub === 'tugas-fungsi') {
-      isi = pv('tugas_fungsi') ? '<div class="prosa">' + teksAtauDaftar(pv('tugas_fungsi')) + '</div>' : kosong;
+      const tg = poin('tugas'), fg = poin('fungsi');
+      if (tg.length || fg.length) {
+        isi = '<div class="stack-lg">' +
+          (tg.length ? '<section><h2>Tugas</h2><div class="prosa">' + daftarPoin(tg, true) + '</div></section>' : '') +
+          (fg.length ? '<section><h2>Fungsi</h2><div class="prosa">' + daftarPoin(fg, true) + '</div></section>' : '') + '</div>';
+      } else {
+        isi = pv('tugas_fungsi') ? '<div class="prosa">' + teksAtauDaftar(pv('tugas_fungsi')) + '</div>' : kosong;
+      }
     } else if (sub === 'struktur') {
       const g = pg('struktur_organisasi');
       const bagan = baganStruktur(d.pejabat, {});

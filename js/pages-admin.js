@@ -28,7 +28,10 @@
     { r: 'pengumuman', t: 'Pengumuman', i: 'campaign', p: R_KONTEN },
     { r: 'regulasi', t: 'Regulasi', i: 'gavel', p: R_KONTEN },
     { r: 'pejabat', t: 'Pejabat dan Pegawai', i: 'badge', p: R_KONTEN },
-    { r: 'profil', t: 'Profil dan Kontak', i: 'domain', p: R_KONTEN },
+    { r: 'profil-teks', t: 'Profil, Sejarah & Sambutan', i: 'domain', p: R_KONTEN },
+    { r: 'visi-misi', t: 'Visi & Misi', i: 'flag', p: R_KONTEN },
+    { r: 'tugas-fungsi', t: 'Tugas & Fungsi', i: 'checklist', p: R_KONTEN },
+    { r: 'kontak', t: 'Kontak', i: 'call', p: R_KONTEN },
     { r: 'survei', t: 'Hasil Survei', i: 'analytics', p: R_KONTEN },
     { r: 'akun', t: 'Akun', i: 'manage_accounts', p: R_ADUAN }
   ];
@@ -99,7 +102,9 @@
     const peta = {
       dashboard: dashboard, pengaduan: pengaduan, berita: function () { return crud('berita'); },
       pengumuman: function () { return crud('pengumuman'); }, regulasi: function () { return crud('regulasi'); },
-      pejabat: function () { return crud('pejabat'); }, profil: profil, survei: survei, akun: akun
+      pejabat: function () { return crud('pejabat'); }, survei: survei, akun: akun,
+      'profil-teks': function () { return crud('profilteks'); }, 'visi-misi': function () { return crud('visimisi'); },
+      'tugas-fungsi': function () { return crud('tugasfungsi'); }, kontak: kontak
     };
     if (!peta[sub]) { tampil(judul('Halaman tidak ditemukan') + UI.kosong('Menu tidak tersedia.', 'search_off')); return; }
     try { await peta[sub](ctx); } catch (e) { if (e.kode !== 'SESI_HABIS' && e.kode !== 'BASI') galatKotak(e); }
@@ -319,6 +324,41 @@
     }
   };
 
+  // ---- Konten profil berbentuk baris (Profil/Sejarah/Sambutan, Visi/Misi, Tugas/Fungsi) ----
+  function urutPoin(jenis) {
+    return function (a, b) {
+      const j = jenis.indexOf(a.Jenis) - jenis.indexOf(b.Jenis);
+      return j || ((Number(a.No) || 999) - (Number(b.No) || 999));
+    };
+  }
+  function tabelPoin(judul, jenis) {
+    return {
+      tabel: 'Konten_Poin', judul: judul, satu: 'poin',
+      saring: function (r) { return jenis.indexOf(r.Jenis) >= 0; },
+      kolom: [['Jenis', 'Jenis'], ['No', 'No'], ['Isi', 'Isi', 'pot']],
+      urut: urutPoin(jenis),
+      baru: function () { return { Jenis: jenis[jenis.length - 1] }; },
+      field: [
+        { k: 'Jenis', l: 'Jenis', t: 'select', opsi: jenis },
+        { k: 'No', l: 'Nomor urut', t: 'text', max: 3, hint: 'Kosongkan agar nomor dibuat otomatis (melanjutkan nomor terakhir pada jenis yang sama).' },
+        { k: 'Isi', l: 'Isi', t: 'textarea', wajib: 1, max: 1500, baris: 4 }
+      ]
+    };
+  }
+  TABEL.visimisi = tabelPoin('Visi & Misi', ['Visi', 'Misi']);
+  TABEL.tugasfungsi = tabelPoin('Tugas & Fungsi', ['Tugas', 'Fungsi']);
+  TABEL.profilteks = {
+    tabel: 'Konten_Teks', judul: 'Profil, Sejarah & Sambutan', satu: 'teks',
+    kolom: [['Jenis', 'Jenis'], ['Judul', 'Judul']],
+    urut: urutPoin(['Profil', 'Sejarah', 'Sambutan']),
+    baru: function () { return { Jenis: 'Profil', Judul: 'Profil Bidang' }; },
+    field: [
+      { k: 'Jenis', l: 'Jenis', t: 'select', opsi: ['Profil', 'Sejarah', 'Sambutan'], hint: 'Tiap jenis hanya satu baris. Untuk mengubah isinya, pakai tombol Ubah.' },
+      { k: 'Judul', l: 'Judul', t: 'text', wajib: 1, max: 200 },
+      { k: 'Isi', l: 'Isi', t: 'textarea', wajib: 1, max: 8000, baris: 12, hint: 'Pisahkan paragraf dengan satu baris kosong. Sambutan tampil di Beranda bersama kartu pimpinan.' }
+    ]
+  };
+
   function sel(v, opsi) {
     return opsi.map(function (o) { return '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
   }
@@ -432,7 +472,7 @@
 
   async function crud(nama) {
     const T = TABEL[nama];
-    const muatData = async function () { return (await adm('adminList', { tabel: T.tabel })).data.sort(T.urut); };
+    const muatData = async function () { return (await adm('adminList', { tabel: T.tabel })).data.filter(T.saring || function () { return true; }).sort(T.urut); };
     let rows = await muatData();
 
     const tambahBtn = '<button type="button" class="btn btn-primary" id="c-baru">' + icon('add') + 'Tambah ' + esc(T.satu) + '</button>';
@@ -446,6 +486,7 @@
             return '<tr>' + T.kolom.map(function (k) {
               const v = r[k[0]];
               if (k[2] === 'tgl') return '<td>' + esc(v ? UI.fmtTgl(v) : '-') + '</td>';
+              if (k[2] === 'pot') return '<td>' + esc(String(v || '-').length > 140 ? String(v).substr(0, 140).replace(/\s+\S*$/, '') + '…' : (v || '-')) + '</td>';
               if (k[2] === 'pub') return '<td>' + '<span class="badge ' + (v === 'Terbit' ? 'badge-ok' : 'badge-muted') + '">' + esc(v || '-') + '</span></td>';
               return '<td>' + esc(v || '-') + '</td>';
             }).join('') + '<td class="aksi-sel"><button type="button" class="btn btn-outline btn-sm" data-edit="' + esc(r.ID) + '">' + icon('edit') + 'Ubah</button>' +
@@ -498,64 +539,43 @@
   }
 
   // ============================================================
-  // PROFIL DAN KONTAK
+  // KONTAK (satu form; hanya kolom yang berubah yang disimpan)
   // ============================================================
-  const FIELD_PROFIL = [
-    { k: 'sambutan', l: 'Sambutan (tampil di Beranda bersama kartu pimpinan)', t: 'textarea', baris: 4 },
-    { k: 'sejarah', l: 'Sejarah', t: 'textarea', baris: 7 },
-    { k: 'visi', l: 'Visi', t: 'textarea', baris: 3 },
-    { k: 'misi', l: 'Misi (satu poin per baris)', t: 'textarea', baris: 6 },
-    { k: 'tugas_fungsi', l: 'Tugas dan fungsi (satu poin per baris)', t: 'textarea', baris: 7 },
-    { k: 'struktur_organisasi', l: 'Bagan struktur organisasi (unggah gambar)', t: 'gambar' },
-    { k: 'kontak_alamat', l: 'Alamat kantor', t: 'text' },
-    { k: 'kontak_telepon', l: 'Telepon / Call Center', t: 'text' },
-    { k: 'kontak_email', l: 'Email', t: 'text' },
-    { k: 'kontak_jam', l: 'Jam pelayanan', t: 'text', hint: 'Contoh: Senin–Jumat, 08.00–16.00 WITA' }
+  const FIELD_KONTAK = [
+    { k: 'kontak_alamat', l: 'Alamat kantor', t: 'text', max: 200 },
+    { k: 'kontak_telepon', l: 'Telepon / Call Center', t: 'text', max: 60 },
+    { k: 'kontak_whatsapp', l: 'WhatsApp', t: 'text', max: 25, hint: 'Hanya angka, spasi, +, -, dan tanda kurung.' },
+    { k: 'kontak_email', l: 'Email kontak publik', t: 'text', max: 120 },
+    { k: 'kontak_jam', l: 'Jam layanan', t: 'text', max: 120, hint: 'Contoh: Senin–Jumat, 08.00–16.00 WITA' },
+    { k: 'kontak_peta', l: 'Tautan peta (Google Maps)', t: 'text', max: 300, hint: 'Salin tautan dari Google Maps (diawali https://).' }
   ];
 
-  async function profil() {
+  async function kontak() {
     const r = await adm('adminList', { tabel: 'Konten_Profil' });
     const peta = {};
     r.data.forEach(function (x) { peta[x.Kunci] = x; });
-    const e = tampil(judul('Profil dan Kontak') + '<p class="muted">Isi di sini tampil pada halaman Profil Bidang, Beranda, dan footer situs. Hanya bagian yang Anda ubah yang disimpan.</p>' +
+    const e = tampil(judul('Kontak') + '<p class="muted">Tampil di footer, halaman Profil, dan kartu kontak situs. Hanya bagian yang Anda ubah yang disimpan.</p>' +
       '<form id="pr-form" class="card card-pad stack-lg" novalidate>' +
-      FIELD_PROFIL.map(function (f) {
-        const awal = peta[f.k] || {};
-        if (f.t === 'gambar') {
-          return '<div class="field"><span class="label">' + esc(f.l) + '</span><div class="unggah-baris" data-unggah="img_' + f.k + '" data-folder="profil" data-jenis="gambar">' +
-            '<input type="hidden" id="fld-img_' + f.k + '" value="' + esc(awal.URL_Gambar || '') + '"><div class="unggah-pratinjau" id="fld-img_' + f.k + '-p">' + pratinjau(awal.URL_Gambar || '', false) + '</div>' +
-            '<div class="unggah-aksi"><label class="btn btn-outline btn-sm" for="fld-img_' + f.k + '-f">' + icon('upload') + 'Pilih gambar</label><input id="fld-img_' + f.k + '-f" class="sr-only" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">' +
-            '<button type="button" class="btn btn-ghost btn-sm" data-hapus-unggah>' + icon('close') + 'Hapus</button></div></div></div>';
-        }
-        return inputField({ k: 'p_' + f.k, l: f.l, t: f.t, baris: f.baris, hint: f.hint, max: f.t === 'text' ? 200 : 8000 }, awal.Isi || '');
+      FIELD_KONTAK.map(function (f) {
+        return inputField({ k: 'p_' + f.k, l: f.l, t: f.t, hint: f.hint, max: f.max }, (peta[f.k] || {}).Isi || '');
       }).join('') +
-      '<div class="aksi-form"><button type="submit" class="btn btn-primary btn-lg" id="pr-simpan">' + icon('save') + 'Simpan perubahan</button></div></form>');
-    aktifkanUnggah(e);
+      '<div class="aksi-form"><button type="submit" class="btn btn-primary btn-lg" id="pr-simpan">' + icon('save') + 'Simpan kontak</button></div></form>');
     e.querySelector('#pr-form').addEventListener('submit', function (ev) {
       ev.preventDefault();
       aman(async function () {
         let n = 0;
-        for (let i = 0; i < FIELD_PROFIL.length; i++) {
-          const f = FIELD_PROFIL[i];
-          const lama = peta[f.k] || { Isi: '', URL_Gambar: '' };
-          const baris = { Kunci: f.k };
-          let berubah = false;
-          if (f.t === 'gambar') {
-            const v = e.querySelector('#fld-img_' + f.k).value;
-            if (v !== (lama.URL_Gambar || '')) { baris.URL_Gambar = v; berubah = true; }
-          } else {
-            const v = e.querySelector('#fld-p_' + f.k).value;
-            if (v !== (lama.Isi || '')) { baris.Isi = v; berubah = true; }
-          }
-          if (berubah) {
-            await adm('adminSave', { tabel: 'Konten_Profil', row: baris });
-            if (f.t === 'gambar') lama.URL_Gambar = baris.URL_Gambar; else lama.Isi = baris.Isi;
-            peta[f.k] = lama;
+        for (let i = 0; i < FIELD_KONTAK.length; i++) {
+          const f = FIELD_KONTAK[i];
+          const lama = peta[f.k] || { Isi: '' };
+          const v = e.querySelector('#fld-p_' + f.k).value.trim();
+          if (v !== (lama.Isi || '')) {
+            await adm('adminSave', { tabel: 'Konten_Profil', row: { Kunci: f.k, Isi: v } });
+            lama.Isi = v; peta[f.k] = lama;
             n++;
           }
         }
         Api.lupakanCache();
-        UI.toast(n ? n + ' bagian profil disimpan.' : 'Tidak ada perubahan.');
+        UI.toast(n ? n + ' isian kontak disimpan.' : 'Tidak ada perubahan.');
       }, e.querySelector('#pr-simpan'), 'Menyimpan…');
     });
   }
