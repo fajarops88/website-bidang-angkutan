@@ -847,7 +847,7 @@
   }
 
   // Cek surat penindakan E-Tilang Dishub (data diambil dari aplikasi E-Tilang; hanya tampil bila ETL_URL diisi)
-  function cekSurat() {
+  function cekSurat(awal) {
     const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Surat Tilang' }], 'Cek Status Surat Tilang', 'Periksa status surat penindakan dengan nomor surat dan nomor polisi.', 'Tanpa login') +
       '<div class="container section"><div class="cek-wrap">' + tabCek('surat') +
       '<form id="form-surat" class="card card-pad" novalidate>' +
@@ -880,12 +880,19 @@
       }
     }
     m.querySelector('#form-surat').addEventListener('submit', function (e) { e.preventDefault(); cari(); });
-    m.querySelector('#s-nomor').focus();
+    if (awal) { m.querySelector('#s-nomor').value = awal; m.querySelector('#s-nopol').focus(); } else m.querySelector('#s-nomor').focus();
+  }
+
+  // Nomor surat dari alamat (mis. dari QR di surat); dibatasi panjang dan karakter agar aman.
+  function nomorDariUrl(v) {
+    let s = ''; try { s = decodeURIComponent(v || ''); } catch (e) { return ''; }
+    s = s.trim().toUpperCase();
+    return /^[A-Z0-9\/.\-]{5,60}$/.test(s) ? s : '';
   }
 
   P.cekStatus = async function (ctx) {
     if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'kendaraan') return cekKendaraan();
-    if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'surat') return Api.etlSiap() ? cekSurat() : (location.replace('#/cek-status'), undefined);
+    if (decodeURIComponent(ctx.parts[1] || '').toLowerCase() === 'surat') return Api.etlSiap() ? cekSurat(nomorDariUrl(ctx.parts[2])) : (location.replace('#/cek-status'), undefined);
     const awal = decodeURIComponent(ctx.parts[1] || '').toUpperCase();
     const m = tampil(kepala([{ t: 'Cek Status' }, { t: 'Tiket' }], 'Cek Status Pengaduan', 'Masukkan Kode Tiket untuk melihat perkembangan tindak lanjut pengaduan Anda.', 'Tanpa login') +
       '<div class="container section"><div class="cek-wrap">' + tabCek('tiket') + '<form id="form-cek" class="card card-pad" novalidate>' +
