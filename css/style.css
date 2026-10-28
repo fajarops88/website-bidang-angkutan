@@ -254,6 +254,13 @@ body.no-scroll { overflow: hidden; }
 .reg-card { display: flex; gap: 16px; justify-content: space-between; align-items: center; }
 .reg-aksi { display: flex; gap: 8px; flex: none; }
 .layout-samping { display: grid; grid-template-columns: 240px 1fr; gap: 32px; align-items: start; }
+.layout-samping > * { min-width: 0; }   /* tanpa ini isi yang lebar (bagan) melebarkan seluruh halaman */
+/* Halaman Struktur Organisasi memakai lebar penuh agar bagan muat; menu sub halaman menjadi baris di atas */
+.layout-penuh { grid-template-columns: 1fr; }
+.layout-penuh .subnav { position: static; display: flex; overflow-x: auto; }
+.layout-penuh .subnav a { white-space: nowrap; border-left: 0; border-bottom: 4px solid transparent; }
+.layout-penuh .subnav a.aktif { border-bottom-color: var(--amber); }
+.org-bungkus { max-width: 100%; }
 .subnav { position: sticky; top: 140px; background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .subnav a { display: block; padding: 12px 16px; text-decoration: none; color: var(--text); font-weight: 600; border-left: 4px solid transparent; }
 .subnav a:hover { background: var(--primary-soft); }

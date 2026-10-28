@@ -449,6 +449,7 @@
     // Bawahan tanpa anak yang jumlahnya melebihi 'kol' dipecah menjadi baris-baris (maks. 'kol' per baris),
     // baris berikutnya tersambung ke tengah baris di atasnya, sehingga bagan tidak melebar ke kanan.
     function daftarAnak(ks, kedalaman, kol) {
+      kol = Math.min(kol, 2);
       const semuaDaun = ks.every(function (c) { return !(anak[c.id] || []).length; });
       if (semuaDaun && ks.length > kol) {
         let baris = '';
@@ -466,17 +467,17 @@
   }
 
   // Menentukan jumlah bawahan per baris untuk tiap cabang di bawah pimpinan, sesuai lebar yang tersedia:
-  // semua cabang mulai dari 1 kolom, kolom sisa diberikan ke cabang yang paling panjang (maks. 3 per baris).
+  // semua cabang mulai dari 1 kolom, kolom sisa diberikan ke cabang yang paling panjang (maks. 2 per baris).
   function kolomMuat(daftar, lebar) {
     const ada = {}; daftar.forEach(function (p) { ada[p.id] = true; });
     const akar = daftar.filter(function (p) { return !p.atasan || !ada[p.atasan] || p.atasan === p.id; })[0] || daftar[0];
     const cabang = daftar.filter(function (p) { return p.atasan === akar.id && p.id !== akar.id; });
     const n = {}; cabang.forEach(function (c) { n[c.id] = daftar.filter(function (x) { return x.atasan === c.id && x.id !== c.id; }).length; });
     const lebarPakai = Math.min(lebar, window.innerWidth);
-    const kolom = Math.max(1, Math.floor((lebarPakai - 16) / 184));
+    const kolom = Math.max(1, Math.floor((lebarPakai - 16) / 188));
     const hasil = {}; cabang.forEach(function (c) { hasil[c.id] = 1; });
     if (window.innerWidth <= 640) {            // cabang ditumpuk ke bawah: tiap cabang boleh memakai seluruh lebar
-      cabang.forEach(function (c) { hasil[c.id] = Math.max(1, Math.min(3, n[c.id], kolom)); });
+      cabang.forEach(function (c) { hasil[c.id] = Math.max(1, Math.min(2, n[c.id], kolom)); });
       return hasil;
     }
     let sisa = kolom - cabang.length;
@@ -485,7 +486,7 @@
       cabang.forEach(function (c) {
         const k = hasil[c.id];
         const baris = Math.ceil(n[c.id] / k);
-        if (k < 3 && k < n[c.id] && baris > terbanyak) { pilih = c; terbanyak = baris; }
+        if (k < 2 && k < n[c.id] && baris > terbanyak) { pilih = c; terbanyak = baris; }
       });
       if (!pilih) break;
       hasil[pilih.id]++; sisa--;
@@ -554,7 +555,7 @@
     }).join('');
 
     const m = tampil(kepala([{ t: 'Profil Bidang' }, { t: SUB_PROFIL[sub] }], SUB_PROFIL[sub], '', cfg.NAMA_BIDANG) +
-      '<div class="container section"><div class="layout-samping"><nav class="subnav" aria-label="Sub halaman profil">' + nav + '</nav><div>' + isi + '</div></div></div>');
+      '<div class="container section"><div class="layout-samping' + (sub === 'struktur' ? ' layout-penuh' : '') + '"><nav class="subnav" aria-label="Sub halaman profil">' + nav + '</nav><div>' + isi + '</div></div></div>');
 
     // Bagan: jumlah bawahan per baris menyesuaikan lebar layar; digambar ulang bila ukuran jendela berubah
     const bungkus = m.querySelector('.org-bungkus');
