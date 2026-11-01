@@ -248,6 +248,9 @@ body.no-scroll { overflow: hidden; }
 .prosa { overflow-wrap: anywhere; }
 .prosa h2, .prosa h3 { margin-top: 1.4em; }
 .prosa ul, .prosa ol { padding-left: 1.4em; }
+.prosa ol.list { list-style: decimal; }
+.prosa ul.list { list-style: disc; }
+.prosa .list li { margin: 0 0 .5em; padding-left: .2em; }
 .prosa img { max-width: 100%; }
 .prosa-terang { color: #e8eefa; }
 .pengumuman { padding: 20px; border-left: 4px solid var(--amber); }
@@ -266,7 +269,7 @@ body.no-scroll { overflow: hidden; }
 .subnav a:hover { background: var(--primary-soft); }
 .subnav a.aktif { border-left-color: var(--amber); background: var(--primary-soft); color: var(--primary); }
 .layout-form { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
-.card-visi { padding: 24px; border-top: 4px solid var(--amber); }
+.card-visi { padding: 24px; background: linear-gradient(135deg, var(--primary-dark), var(--primary) 75%); border-color: transparent; border-top: 4px solid var(--amber); color: #fff; }
 .pj-card { padding: 24px; text-align: center; }
 .pj-jab { color: var(--primary); font-weight: 600; font-size: .9rem; }
 .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: var(--primary-soft); margin: 0 auto; display: block; }
