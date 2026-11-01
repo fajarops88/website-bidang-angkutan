@@ -206,6 +206,8 @@ body.no-scroll { overflow: hidden; }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
 .hero-kartu { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); border-radius: var(--r-lg); padding: 24px; text-align: center; }
 .hero-kartu h3 { color: #fff; margin-top: 12px; }
+.hero-kartu > div > strong, .hero-kartu > div > span { display: block; }
+.hero-kartu > div > span { margin-bottom: 8px; opacity: .9; }
 .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); margin-bottom: 8px; }
 .eyebrow-light { color: var(--amber); }
 .svc { display: block; padding: 24px; text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; }
